@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/src/lib/db";
-import { evolutionCompare, listSnapshots } from "@/src/lib/stats";
+import { evolutionCompare, listSnapshots, filterOptions, type AggFilters } from "@/src/lib/stats";
 
 export const dynamic = "force-dynamic";
+
+function readFilters(url: URL): AggFilters {
+  return {
+    agence: url.searchParams.get("agence") ?? undefined,
+    com: url.searchParams.get("com") ?? undefined,
+    categorie: url.searchParams.get("categorie") ?? undefined,
+    q: url.searchParams.get("q") ?? undefined,
+  };
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -16,10 +25,12 @@ export async function GET(req: Request) {
   }
   const recentId = Number(url.searchParams.get("n") ?? snapshots[0].id);
   const prevId = Number(url.searchParams.get("n1") ?? snapshots[1].id);
-  const cmp = await evolutionCompare(pool, prevId, recentId);
+  const f = readFilters(url);
+  const cmp = await evolutionCompare(pool, prevId, recentId, f);
+  const options = await filterOptions(pool, recentId);
   const meta = {
     recentSnap: snapshots.find((s) => s.id === recentId),
     previousSnap: snapshots.find((s) => s.id === prevId),
   };
-  return NextResponse.json({ snapshots, ...cmp, ...meta });
+  return NextResponse.json({ snapshots, ...cmp, ...meta, options });
 }

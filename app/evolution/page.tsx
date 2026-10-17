@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { formatDateFR, InfoBanner } from "@/components/ui";
+import { formatDateFR, InfoBanner, FilterBar } from "@/components/ui";
 
 const CATS: { key: string; label: string; color: string }[] = [
   { key: "total", label: "Total", color: "#6366f1" },
@@ -37,18 +37,31 @@ function pctStr(pct: number | null): string {
 
 type ComSortKey = "com" | "ancien" | "recent" | "variation" | "pct";
 
+type Filters = { agence: string; com: string; categorie: string; q: string };
+const NO_FILTERS: Filters = { agence: "", com: "", categorie: "", q: "" };
+
+function appendFilters(qs: URLSearchParams, f: Filters) {
+  if (f.agence) qs.set("agence", f.agence);
+  if (f.com) qs.set("com", f.com);
+  if (f.categorie) qs.set("categorie", f.categorie);
+  if (f.q) qs.set("q", f.q);
+}
+
 export default function EvolutionPage() {
   const [data, setData] = useState<any>(null);
   const [n, setN] = useState("");
   const [n1, setN1] = useState("");
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [options, setOptions] = useState<{ agences: string[]; coms: string[] }>({ agences: [], coms: [] });
   const [comSort, setComSort] = useState<{ key: ComSortKey; dir: "asc" | "desc" }>({ key: "variation", dir: "desc" });
 
-  const load = async (a?: string, b?: string) => {
+  const load = async (a?: string, b?: string, f: Filters = filters) => {
     setError("");
     const qs = new URLSearchParams();
     if (a && b) { qs.set("n1", a); qs.set("n", b); }
     else if (n1 && n) { qs.set("n1", n1); qs.set("n", n); }
+    appendFilters(qs, f);
     const r = await fetch(`/api/evolution?${qs}`);
     const j = await r.json();
     if (!r.ok) setError(j.error ?? "Erreur.");
@@ -56,10 +69,32 @@ export default function EvolutionPage() {
       setData(j);
       if (j.recentSnap) setN(String(j.recentSnap.id));
       if (j.previousSnap) setN1(String(j.previousSnap.id));
+      if (j.options) setOptions(j.options);
     }
   };
 
   useEffect(() => { load(); }, []);
+
+  const onFilter = (patch: Partial<Filters>) => {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    if (patch.q !== undefined && Object.keys(patch).length === 1) return; // saisie : debounce
+    load(undefined, undefined, next);
+  };
+
+  const firstQ = useRef(true);
+  useEffect(() => {
+    if (firstQ.current) { firstQ.current = false; return; }
+    const t = setTimeout(() => load(undefined, undefined), 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.q]);
+
+  const trendParams = useMemo(() => {
+    const qs = new URLSearchParams();
+    appendFilters(qs, filters);
+    return qs.toString();
+  }, [filters]);
 
   const comRows = useMemo(() => {
     if (!data?.parCom) return [];
@@ -128,6 +163,16 @@ export default function EvolutionPage() {
         </select></label>
       </div>
 
+      <FilterBar
+        agences={options.agences}
+        coms={options.coms}
+        fAgence={filters.agence}
+        fCom={filters.com}
+        fCategorie={filters.categorie}
+        fQ={filters.q}
+        onChange={onFilter}
+      />
+
       <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
         <div>
           <div className="text-xs text-slate-500 dark:text-slate-400">Total dossiers en retard (distincts)</div>
@@ -191,20 +236,20 @@ export default function EvolutionPage() {
 
       <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
         <h2 className="mb-2 font-semibold">Tendance (tous snapshots)</h2>
-        <TrendChart snapshots={data.snapshots} />
+        <TrendChart snapshots={data.snapshots} params={trendParams} />
       </div>
     </div>
   );
 }
 
-function TrendChart({ snapshots }: { snapshots: any[] }) {
+function TrendChart({ snapshots, params }: { snapshots: any[]; params: string }) {
   const [series, setSeries] = useState<any[] | null>(null);
   const [selected, setSelected] = useState<string[]>(["total"]);
   useEffect(() => {
     (async () => {
       const out: any[] = [];
       for (const s of [...snapshots].reverse()) {
-        const r = await fetch(`/api/dashboard?snapshot=${s.id}`).then((x) => x.json());
+        const r = await fetch(`/api/dashboard?snapshot=${s.id}${params ? `&${params}` : ""}`).then((x) => x.json());
         const k = r.kpis ?? {};
         const row: any = {
           date: formatDateFR(s.extraction_date),
@@ -215,7 +260,7 @@ function TrendChart({ snapshots }: { snapshots: any[] }) {
       }
       setSeries(out);
     })();
-  }, [snapshots]);
+  }, [snapshots, params]);
 
   const toggle = (key: string) =>
     setSelected((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));

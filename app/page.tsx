@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { KpiCard, SnapshotSelector, Legend } from "@/components/ui";
+import { KpiCard, SnapshotSelector, Legend, FilterBar } from "@/components/ui";
 
 const CATS: { key: string; label: string }[] = [
   { key: "bae", label: "BAE" },
@@ -19,24 +19,53 @@ const CATS: { key: string; label: string }[] = [
   { key: "debours", label: "Avec débours" },
 ];
 
+type Filters = { agence: string; com: string; categorie: string; q: string };
+const NO_FILTERS: Filters = { agence: "", com: "", categorie: "", q: "" };
+
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [snapshot, setSnapshot] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [options, setOptions] = useState<{ agences: string[]; coms: string[] }>({ agences: [], coms: [] });
 
-  const load = async (id?: number) => {
+  const load = async (f: Filters, id?: number | null) => {
     setError("");
-    const r = await fetch(id ? `/api/dashboard?snapshot=${id}` : "/api/dashboard");
+    const qs = new URLSearchParams();
+    const useId = id === undefined ? snapshot : id;
+    if (useId) qs.set("snapshot", String(useId));
+    if (f.agence) qs.set("agence", f.agence);
+    if (f.com) qs.set("com", f.com);
+    if (f.categorie) qs.set("categorie", f.categorie);
+    if (f.q) qs.set("q", f.q);
+    qs.set("limit", "200");
+    const r = await fetch(`/api/dashboard?${qs}`);
     const j = await r.json();
     if (!r.ok) setError(j.error ?? "Erreur de chargement.");
     else {
       setData(j);
       setSnapshot(j.importId);
+      if (j.options) setOptions(j.options);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(NO_FILTERS, null); }, []);
+
+  const onFilter = (patch: Partial<Filters>) => {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    if (patch.q !== undefined && Object.keys(patch).length === 1) return; // saisie : debounce
+    load(next);
+  };
+
+  const firstQ = useRef(true);
+  useEffect(() => {
+    if (firstQ.current) { firstQ.current = false; return; }
+    const t = setTimeout(() => load(filters), 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.q]);
 
   if (error) return <div className="rounded bg-white p-6 text-red-600 dark:bg-slate-900 dark:text-red-400">{error} <Link className="underline" href="/import">Aller à l&apos;import.</Link></div>;
   if (!data) return <div className="rounded bg-white p-6 dark:bg-slate-900">Chargement…</div>;
@@ -53,8 +82,17 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Tableau de bord</h1>
-        <SnapshotSelector snapshots={data.snapshots} value={snapshot} onChange={(id) => load(id)} />
+        <SnapshotSelector snapshots={data.snapshots} value={snapshot} onChange={(id) => load(filters, id)} />
       </div>
+      <FilterBar
+        agences={options.agences}
+        coms={options.coms}
+        fAgence={filters.agence}
+        fCom={filters.com}
+        fCategorie={filters.categorie}
+        fQ={filters.q}
+        onChange={onFilter}
+      />
       <Legend />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">

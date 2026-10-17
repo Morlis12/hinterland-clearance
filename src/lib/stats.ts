@@ -14,6 +14,41 @@ export const CAT_COLUMNS: Record<string, string> = {
   debours: "debours",
 };
 
+export interface AggFilters {
+  q?: string;
+  agence?: string;
+  com?: string;
+  categorie?: string;
+}
+
+/** Clause WHERE (préfixée par AND) pour les agrégats de raw_dossier_details ; params numérotés à partir de p0. */
+export function buildAggWhere(f: AggFilters, p0 = 2) {
+  const params: unknown[] = [];
+  const all: string[] = [];
+  const geo: string[] = [];
+  let p = p0;
+  if (f.agence) { all.push(`agency_name=$${p}`); geo.push(`agency_name=$${p}`); params.push(f.agence); p++; }
+  if (f.com) { all.push(`com_name=$${p}`); geo.push(`com_name=$${p}`); params.push(f.com); p++; }
+  if (f.q) { all.push(`(dossier ILIKE $${p} OR com_name ILIKE $${p})`); params.push(`%${f.q}%`); p++; }
+  if (f.categorie && CAT_COLUMNS[f.categorie]) all.push(`${CAT_COLUMNS[f.categorie]}=1`);
+  return {
+    all: all.length ? " AND " + all.join(" AND ") : "",
+    geo: geo.length ? " AND " + geo.join(" AND ") : "",
+    params,
+    next: p,
+  };
+}
+
+export async function filterOptions(pool: Pool, importId: number) {
+  const r = await pool.query(
+    `SELECT DISTINCT agency_name, com_name FROM raw_dossier_details WHERE import_id=$1`,
+    [importId]
+  );
+  const agences = [...new Set(r.rows.map((x) => x.agency_name).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr")) as string[];
+  const coms = [...new Set(r.rows.map((x) => x.com_name).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr")) as string[];
+  return { agences, coms };
+}
+
 export async function latestSnapshotId(pool: Pool, fileType = "A"): Promise<number | null> {
   const r = await pool.query(
     `SELECT id FROM imports WHERE status IN ('success','warnings') AND file_type=$1 ORDER BY extraction_date DESC, id DESC LIMIT 1`,
@@ -37,23 +72,25 @@ export async function listSnapshots(pool: Pool, fileType?: string) {
 }
 
 /** KPI du dashboard pour un snapshot : total dossiers distincts + par catégorie. */
-export async function dashboardKpis(pool: Pool, importId: number) {
+export async function dashboardKpis(pool: Pool, importId: number, f: AggFilters = {}) {
+  const w = buildAggWhere(f);
   const catSums = CATEGORIES.map((c) => `COALESCE(SUM(${CAT_COLUMNS[c.key]}),0)::int AS "${c.key}"`).join(", ");
   const r = await pool.query(
-    `SELECT COUNT(*)::int AS total, ${catSums} FROM raw_dossier_details WHERE import_id=$1`,
-    [importId]
+    `SELECT COUNT(*)::int AS total, ${catSums} FROM raw_dossier_details WHERE import_id=$1${w.all}`,
+    [importId, ...w.params]
   );
   const row = r.rows[0];
   // Total dossiers en retard = dossiers ayant au moins une catégorie (tous normalement, mais on vérifie)
   const r2 = await pool.query(
-    `SELECT COUNT(*)::int AS c FROM raw_dossier_details WHERE import_id=$1 AND flags_mask <> 0`,
-    [importId]
+    `SELECT COUNT(*)::int AS c FROM raw_dossier_details WHERE import_id=$1 AND flags_mask <> 0${w.all}`,
+    [importId, ...w.params]
   );
   return { ...row, totalAvecRetard: r2.rows[0].c };
 }
 
 /** Top COM par nombre de dossiers en retard. */
-export async function topComs(pool: Pool, importId: number, limit = 15) {
+export async function topComs(pool: Pool, importId: number, limit = 15, f: AggFilters = {}) {
+  const w = buildAggWhere(f);
   const r = await pool.query(
     `SELECT COALESCE(com_name,'(inconnu)') AS com, COALESCE(com_unit_name,'') AS unite, COALESCE(agency_name,'') AS agence,
       COUNT(*)::int AS total,
@@ -63,19 +100,20 @@ export async function topComs(pool: Pool, importId: number, limit = 15) {
       COALESCE(SUM(declares_non_factures),0)::int AS "declaresNonFactures",
       COALESCE(SUM(fact_prestation),0)::int AS "factPrestation", COALESCE(SUM(archivage),0)::int AS archivage,
       COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours
-     FROM raw_dossier_details WHERE import_id=$1
-     GROUP BY com_name, com_unit_name, agency_name ORDER BY total DESC LIMIT $2`,
-    [importId, limit]
+     FROM raw_dossier_details WHERE import_id=$1${w.all}
+     GROUP BY com_name, com_unit_name, agency_name ORDER BY total DESC LIMIT $${w.next}`,
+    [importId, ...w.params, limit]
   );
   return r.rows;
 }
 
 /** Matrice par COM avec dossiers validés (Sheet1) + retards (Sheet2). */
-export async function comMatrix(pool: Pool, importId: number) {
+export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}) {
+  const w = buildAggWhere(f);
   const r = await pool.query(
     `WITH val AS (
        SELECT com_name, com_unit_name, agency_name, MAX(dossiers_valides) AS valides
-       FROM raw_com_summary WHERE import_id=$1 AND is_subtotal=false GROUP BY 1,2,3
+       FROM raw_com_summary WHERE import_id=$1 AND is_subtotal=false${w.geo} GROUP BY 1,2,3
      ),
      ret AS (
        SELECT com_name, COUNT(*)::int AS total,
@@ -85,7 +123,7 @@ export async function comMatrix(pool: Pool, importId: number) {
         COALESCE(SUM(declares_non_factures),0)::int AS "declaresNonFactures",
         COALESCE(SUM(fact_prestation),0)::int AS "factPrestation", COALESCE(SUM(archivage),0)::int AS archivage,
         COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours
-       FROM raw_dossier_details WHERE import_id=$1 GROUP BY 1
+       FROM raw_dossier_details WHERE import_id=$1${w.all} GROUP BY 1
      )
      SELECT COALESCE(ret.com_name, val.com_name) AS com,
        COALESCE(val.com_unit_name,'') AS "uniteCom", COALESCE(val.agency_name,'') AS agence,
@@ -97,8 +135,8 @@ export async function comMatrix(pool: Pool, importId: number) {
        COALESCE(ret."factPrestation",0) AS "factPrestation", COALESCE(ret.archivage,0) AS archivage,
        COALESCE(ret."sansDeclaration",0) AS "sansDeclaration", COALESCE(ret.debours,0) AS debours
      FROM ret FULL OUTER JOIN val ON ret.com_name = val.com_name
-     ORDER BY total DESC`,
-    [importId]
+      ORDER BY total DESC`,
+    [importId, ...w.params]
   );
   return r.rows;
 }
@@ -148,19 +186,22 @@ export async function queryDossiers(pool: Pool, importId: number, f: DossierFilt
   return { total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)), rows: rows.rows };
 }
 
-export async function evolutionCompare(pool: Pool, idA: number, idB: number) {
+export async function evolutionCompare(pool: Pool, idA: number, idB: number, f: AggFilters = {}) {
   // idA = N-1 (ancien), idB = N (récent)
   const catSums = (alias: string) =>
     CATEGORIES.map((c) => `COALESCE(SUM(${alias}.${CAT_COLUMNS[c.key]}),0)::int AS "${c.key}"`).join(", ");
-  const a = await pool.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1`, [idA]);
-  const b = await pool.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1`, [idB]);
+  const wA = buildAggWhere(f, 2);
+  const wB = buildAggWhere(f, 2);
+  const wC = buildAggWhere(f, 3);
+  const a = await pool.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1${wA.all}`, [idA, ...wA.params]);
+  const b = await pool.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1${wB.all}`, [idB, ...wB.params]);
   const byCom = await pool.query(
-    `WITH a AS (SELECT com_name AS com, COUNT(*)::int AS total FROM raw_dossier_details WHERE import_id=$1 GROUP BY 1),
-          b AS (SELECT com_name AS com, COUNT(*)::int AS total FROM raw_dossier_details WHERE import_id=$2 GROUP BY 1)
+    `WITH a AS (SELECT com_name AS com, COUNT(*)::int AS total FROM raw_dossier_details WHERE import_id=$1${wC.all} GROUP BY 1),
+          b AS (SELECT com_name AS com, COUNT(*)::int AS total FROM raw_dossier_details WHERE import_id=$2${wC.all} GROUP BY 1)
      SELECT COALESCE(a.com,b.com) AS com, COALESCE(a.total,0) AS ancien, COALESCE(b.total,0) AS recent,
        COALESCE(b.total,0)-COALESCE(a.total,0) AS variation
      FROM a FULL OUTER JOIN b ON a.com=b.com ORDER BY variation DESC`,
-    [idA, idB]
+    [idA, idB, ...wC.params]
   );
   return { ancien: a.rows[0], recent: b.rows[0], parCom: byCom.rows };
 }

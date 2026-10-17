@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
+import { CATEGORIES } from "@/src/lib/import/constants";
 
 /** Date AAAA-MM-JJ -> jj/mm/aaaa (jamais d'ISO brut à l'écran). */
 export function formatDateFR(iso: string | null | undefined): string {
@@ -93,6 +94,60 @@ export function InfoBanner({
         <span className="shrink-0 underline">{open ? "Réduire" : "Afficher"}</span>
       </button>
       {open && <div className="px-3 pb-3 text-xs text-slate-700 dark:text-slate-400">{children}</div>}
+    </div>
+  );
+}
+
+export function FilterBar({
+  agences, coms, fAgence, fCom, fCategorie, fQ, onChange,
+}: {
+  agences: string[];
+  coms: string[];
+  fAgence: string;
+  fCom: string;
+  fCategorie: string;
+  fQ: string;
+  onChange: (patch: { agence?: string; com?: string; categorie?: string; q?: string }) => void;
+}) {
+  const sel = "rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+  const active = fAgence || fCom || fCategorie || fQ;
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <label className="inline-flex items-center gap-2">
+        <span className="text-slate-600 dark:text-slate-400">Agence :</span>
+        <select value={fAgence} onChange={(e) => onChange({ agence: e.target.value })} className={sel}>
+          <option value="">Toutes</option>
+          {agences.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </label>
+      <label className="inline-flex items-center gap-2">
+        <span className="text-slate-600 dark:text-slate-400">COM :</span>
+        <select value={fCom} onChange={(e) => onChange({ com: e.target.value })} className={sel}>
+          <option value="">Tous</option>
+          {coms.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </label>
+      <label className="inline-flex items-center gap-2">
+        <span className="text-slate-600 dark:text-slate-400">Catégorie :</span>
+        <select value={fCategorie} onChange={(e) => onChange({ categorie: e.target.value })} className={sel}>
+          <option value="">Toutes</option>
+          {CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+        </select>
+      </label>
+      <input
+        value={fQ}
+        onChange={(e) => onChange({ q: e.target.value })}
+        placeholder="Nom / n° de dossier…"
+        className={`${sel} w-52`}
+      />
+      {active && (
+        <button
+          onClick={() => onChange({ agence: "", com: "", categorie: "", q: "" })}
+          className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+        >
+          Réinitialiser
+        </button>
+      )}
     </div>
   );
 }

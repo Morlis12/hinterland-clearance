@@ -19,12 +19,18 @@ const COLS: { key: string; label: string }[] = [
   { key: "total", label: "Total retards" },
 ];
 
+const norm = (s: unknown) =>
+  String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 export default function ComsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [agences, setAgences] = useState<string[]>([]);
   const [unites, setUnites] = useState<string[]>([]);
   const [fAgence, setFAgence] = useState("");
   const [fUnite, setFUnite] = useState("");
+  const [fCom, setFCom] = useState("");
+  const [fNom, setFNom] = useState("");
+  const [dossierQ, setDossierQ] = useState("");
   const [sort, setSort] = useState("total");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<any>(null);
@@ -38,15 +44,26 @@ export default function ComsPage() {
     });
   }, []);
 
+  const coms = useMemo(
+    () => [...new Set(rows.map((x) => x.com).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr")) as string[],
+    [rows]
+  );
+
   const filtered = useMemo(() => {
-    let out = rows.filter((x) => (!fAgence || x.agence === fAgence) && (!fUnite || x.uniteCom === fUnite));
+    let out = rows.filter(
+      (x) =>
+        (!fAgence || x.agence === fAgence) &&
+        (!fUnite || x.uniteCom === fUnite) &&
+        (!fCom || x.com === fCom) &&
+        (!fNom || norm(x.com).includes(norm(fNom)) || norm(x.uniteCom).includes(norm(fNom)))
+    );
     out = [...out].sort((a, b) => {
       const va = a[sort] ?? 0, vb = b[sort] ?? 0;
       if (typeof va === "string") return dir === "asc" ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
       return dir === "asc" ? va - vb : vb - va;
     });
     return out;
-  }, [rows, fAgence, fUnite, sort, dir]);
+  }, [rows, fAgence, fUnite, fCom, fNom, sort, dir]);
 
   const totals = useMemo(() => filtered.map((x) => Number(x.total) || 0), [filtered]);
   const minTotal = Math.min(...totals, 0);
@@ -72,10 +89,21 @@ export default function ComsPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Analyse par COM</h1>
-      <div className="flex flex-wrap gap-3 text-sm">
-        <label>Agence : <select value={fAgence} onChange={(e) => setFAgence(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{agences.map((a) => <option key={a} value={a}>{a}</option>)}</select></label>
-        <label>Unité : <select value={fUnite} onChange={(e) => setFUnite(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{unites.map((a) => <option key={a} value={a}>{a}</option>)}</select></label>
-        <span className="text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge (plus critique) → orange → vert (moins critique) selon le nombre de retards.</span>
+      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <label className="inline-flex items-center gap-2"><span className="text-slate-600 dark:text-slate-400">Agence :</span>
+          <select value={fAgence} onChange={(e) => setFAgence(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{agences.map((a) => <option key={a} value={a}>{a}</option>)}</select>
+        </label>
+        <label className="inline-flex items-center gap-2"><span className="text-slate-600 dark:text-slate-400">Unité :</span>
+          <select value={fUnite} onChange={(e) => setFUnite(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{unites.map((a) => <option key={a} value={a}>{a}</option>)}</select>
+        </label>
+        <label className="inline-flex items-center gap-2"><span className="text-slate-600 dark:text-slate-400">COM :</span>
+          <select value={fCom} onChange={(e) => setFCom(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Tous</option>{coms.map((a) => <option key={a} value={a}>{a}</option>)}</select>
+        </label>
+        <input value={fNom} onChange={(e) => setFNom(e.target.value)} placeholder="Nom (COM / unité)…" className="w-52 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+        {(fAgence || fUnite || fCom || fNom) && (
+          <button onClick={() => { setFAgence(""); setFUnite(""); setFCom(""); setFNom(""); }} className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Réinitialiser</button>
+        )}
+        <span className="text-xs text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge (plus critique) → orange → vert (moins critique) selon le nombre de retards.</span>
       </div>
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-slate-900 dark:shadow-none">
         <table className="min-w-full text-xs">
@@ -127,9 +155,20 @@ export default function ComsPage() {
             Total retards : {selected.total}
             {selected.dossiersValides ? ` · Taux : ${(100 * selected.total / selected.dossiersValides).toFixed(1)} %` : ""}
           </p>
-          <Link className="text-sm text-marine-700 underline dark:text-gold-300" href={`/details?com=${encodeURIComponent(selected.com)}`}>
-            Voir ses dossiers →
-          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-sm dark:border-slate-800">
+            <input
+              value={dossierQ}
+              onChange={(e) => setDossierQ(e.target.value)}
+              placeholder="N° de dossier (recherche dans ses détails)…"
+              className="w-72 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+            <Link
+              className="rounded bg-marine-800 px-3 py-1 text-white dark:bg-gold-300 dark:text-marine-900"
+              href={`/details?com=${encodeURIComponent(selected.com)}${dossierQ ? `&q=${encodeURIComponent(dossierQ)}` : ""}`}
+            >
+              Rechercher
+            </Link>
+          </div>
         </div>
       )}
     </div>
