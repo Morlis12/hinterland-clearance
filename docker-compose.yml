@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hinterland
+      POSTGRES_PASSWORD: hinterland
+      POSTGRES_DB: hinterland
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hinterland -d hinterland"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://hinterland:hinterland@db:5432/hinterland
+      APP_PASSWORD: ${APP_PASSWORD:-hinterland-demo}
+      APP_SESSION_SECRET: ${APP_SESSION_SECRET:-dev-secret-change-me-please-long-enough}
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

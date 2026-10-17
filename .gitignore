@@ -1,0 +1,22 @@
+# Dépendances et build
+node_modules/
+.next/
+out/
+
+# Données réelles — JAMAIS commitées (ni xlsx, ni csv, ni contenu de data/)
+*.xlsx
+*.xls
+*.csv
+data/*
+!data/.gitkeep
+
+# Secrets
+.env
+.env.local
+.env*.local
+
+# Divers
+.DS_Store
+*.log
+*.tsbuildinfo
+coverage/

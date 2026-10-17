@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --marine: #1c3359;
+  --gold: #e8d08d;
+  --chart-bar: #162f7d;
+  --chart-bar2: #b91c1c;
+  --chart-grid: #e2e8f0;
+  --chart-tick: #475569;
+}
+
+.dark {
+  --chart-bar: #e8d08d;
+  --chart-bar2: #f87171;
+  --chart-grid: #334155;
+  --chart-tick: #94a3b8;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+}
+
+/* Graphiques Recharts : couleurs thématisées (jamais de bleu foncé en mode sombre) */
+
+.chart-cat .recharts-bar-rectangle path {
+  fill: var(--chart-bar);
+}
+
+.chart-com .recharts-bar-rectangle path {
+  fill: var(--chart-bar2);
+}
+
+.chart-cat .recharts-cartesian-grid line,
+.chart-com .recharts-cartesian-grid line,
+.chart-trend .recharts-cartesian-grid line {
+  stroke: var(--chart-grid);
+}
+
+.chart-cat .recharts-cartesian-axis-tick text,
+.chart-com .recharts-cartesian-axis-tick text,
+.chart-trend .recharts-cartesian-axis-tick text {
+  fill: var(--chart-tick);
+}
+
+.chart-trend .recharts-line-curve {
+  stroke: var(--chart-bar);
+}
+
+/* ---------- Page de connexion : animations discrètes ---------- */
+
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shake-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+/* Route de suivi (page de connexion) : tireté qui descend, points or, étapes en fondu */
+
+@keyframes route-dash {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+.route-dash {
+  animation: route-dash 9s linear infinite;
+}
+
+@keyframes route-comet {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+.route-comet {
+  animation: route-comet 10s linear infinite;
+  will-change: transform;
+}
+
+@keyframes route-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.route-step {
+  animation: route-step-in 600ms ease-out both;
+}
+
+.login-hero-img {
+  animation: hero-zoom 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.login-card {
+  animation: card-in 500ms ease-out both;
+}
+
+.login-card-logo {
+  animation: card-in 500ms ease-out 150ms both;
+}
+
+.login-card-tagline {
+  animation: card-in 500ms ease-out 300ms both;
+}
+
+.login-fade-in {
+  animation: fade-in 600ms ease-out 300ms both;
+}
+
+.login-shake {
+  animation: shake-x 450ms ease-in-out both;
+}
+
+/* Lignes animées agences → COM (tirets qui défilent) */
+
+@keyframes flow-move {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: 9px;
+  }
+}
+
+.flow-line {
+  height: 2px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(28, 51, 89, 0.55) 0 3px,
+    transparent 3px 9px
+  );
+  background-size: 9px 100%;
+  animation: flow-move 800ms linear infinite;
+}
+
+.flow-line-1 {
+  animation-delay: 200ms;
+}
+
+.flow-line-2 {
+  animation-delay: 400ms;
+}
+
+.login-input {
+  @apply transition-[border-color,box-shadow] duration-150 ease-out;
+}
+
+.login-button {
+  @apply transition-colors duration-200 ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-img,
+  .login-card,
+  .login-card-logo,
+  .login-card-tagline,
+  .login-fade-in,
+  .login-shake,
+  .flow-line,
+  .route-dash,
+  .route-comet,
+  .route-step {
+    animation: none !important;
+  }
+  .route-comet {
+    display: none !important;
+  }
+}
