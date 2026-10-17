@@ -12,10 +12,10 @@ const LINKS = [
   { href: "/import", label: "Import des données" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   if (pathname === "/login") return null;
 
   const logout = async () => {
@@ -29,15 +29,33 @@ export default function Sidebar() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex h-12 items-center justify-between bg-[#1D3259] px-4 text-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/logo_agl_or.png" alt="AGL" className="h-8 w-auto" />
-        <button onClick={() => setOpen(!open)} className="rounded border border-white/30 px-3 py-1 text-sm">
-          {open ? "Fermer" : "Menu"}
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="rounded border border-white/30 px-3 py-1 text-sm">
+          {mobileOpen ? "Fermer" : "Menu"}
         </button>
       </div>
+      {!open && (
+        <button
+          onClick={onToggle}
+          title="Afficher le menu"
+          aria-label="Afficher le menu"
+          className="hidden lg:flex fixed left-3 top-3 z-30 h-9 w-9 items-center justify-center rounded bg-[#1D3259] text-white shadow-md hover:bg-[#16263f] dark:bg-slate-800 dark:hover:bg-slate-700"
+        >
+          ▶
+        </button>
+      )}
       <aside
-        className={`fixed z-20 inset-y-0 left-0 w-64 transform bg-[#1D3259] text-white transition-transform lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed z-20 inset-y-0 left-0 w-64 transform bg-[#1D3259] text-white transition-transform duration-200 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        } ${open ? "lg:translate-x-0" : "lg:-translate-x-full"}`}
       >
+        <button
+          onClick={onToggle}
+          title="Réduire le menu"
+          aria-label="Réduire le menu"
+          className="hidden lg:flex absolute right-2 top-2 h-7 w-7 items-center justify-center rounded bg-white/10 text-xs hover:bg-white/20"
+        >
+          ◀
+        </button>
         <div className="flex flex-col items-center border-b border-white/10 px-5 pb-4 pt-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo_agl_or.png" alt="AGL — Africa Global Logistics" className="h-auto w-36" />
@@ -50,7 +68,7 @@ export default function Sidebar() {
               <Link
                 key={l.href}
                 href={l.href}
-                onClick={() => setOpen(false)}
+                onClick={() => setMobileOpen(false)}
                 className={`block rounded px-3 py-2 text-sm transition-colors duration-150 ${
                   active ? "bg-white font-semibold text-marine-900 dark:bg-gold-300" : "hover:bg-white/10"
                 }`}
