@@ -19,8 +19,8 @@ const CATS: { key: string; label: string }[] = [
   { key: "debours", label: "Avec débours" },
 ];
 
-type Filters = { agence: string; com: string; categorie: string; q: string };
-const NO_FILTERS: Filters = { agence: "", com: "", categorie: "", q: "" };
+type Filters = { agence: string; unite: string; com: string; categorie: string; q: string };
+const NO_FILTERS: Filters = { agence: "", unite: "", com: "", categorie: "", q: "" };
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
-  const [options, setOptions] = useState<{ agences: string[]; coms: string[] }>({ agences: [], coms: [] });
+  const [options, setOptions] = useState<{ agences: string[]; unites: string[]; coms: string[] }>({ agences: [], unites: [], coms: [] });
 
   const load = async (f: Filters, id?: number | null) => {
     setError("");
@@ -36,6 +36,7 @@ export default function DashboardPage() {
     const useId = id === undefined ? snapshot : id;
     if (useId) qs.set("snapshot", String(useId));
     if (f.agence) qs.set("agence", f.agence);
+    if (f.unite) qs.set("unite", f.unite);
     if (f.com) qs.set("com", f.com);
     if (f.categorie) qs.set("categorie", f.categorie);
     if (f.q) qs.set("q", f.q);
@@ -86,8 +87,10 @@ export default function DashboardPage() {
       </div>
       <FilterBar
         agences={options.agences}
+        unites={options.unites}
         coms={options.coms}
         fAgence={filters.agence}
+        fUnite={filters.unite}
         fCom={filters.com}
         fCategorie={filters.categorie}
         fQ={filters.q}

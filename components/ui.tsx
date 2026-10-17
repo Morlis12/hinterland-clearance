@@ -99,18 +99,20 @@ export function InfoBanner({
 }
 
 export function FilterBar({
-  agences, coms, fAgence, fCom, fCategorie, fQ, onChange,
+  agences, unites, coms, fAgence, fUnite, fCom, fCategorie, fQ, onChange,
 }: {
   agences: string[];
+  unites: string[];
   coms: string[];
   fAgence: string;
+  fUnite: string;
   fCom: string;
   fCategorie: string;
   fQ: string;
-  onChange: (patch: { agence?: string; com?: string; categorie?: string; q?: string }) => void;
+  onChange: (patch: { agence?: string; unite?: string; com?: string; categorie?: string; q?: string }) => void;
 }) {
   const sel = "rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
-  const active = fAgence || fCom || fCategorie || fQ;
+  const active = fAgence || fUnite || fCom || fCategorie || fQ;
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
       <label className="inline-flex items-center gap-2">
@@ -118,6 +120,13 @@ export function FilterBar({
         <select value={fAgence} onChange={(e) => onChange({ agence: e.target.value })} className={sel}>
           <option value="">Toutes</option>
           {agences.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </label>
+      <label className="inline-flex items-center gap-2">
+        <span className="text-slate-600 dark:text-slate-400">Unité :</span>
+        <select value={fUnite} onChange={(e) => onChange({ unite: e.target.value })} className={sel}>
+          <option value="">Toutes</option>
+          {unites.map((u) => <option key={u} value={u}>{u}</option>)}
         </select>
       </label>
       <label className="inline-flex items-center gap-2">
@@ -142,7 +151,7 @@ export function FilterBar({
       />
       {active && (
         <button
-          onClick={() => onChange({ agence: "", com: "", categorie: "", q: "" })}
+          onClick={() => onChange({ agence: "", unite: "", com: "", categorie: "", q: "" })}
           className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           Réinitialiser

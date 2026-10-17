@@ -41,15 +41,6 @@ function DetailsInner() {
 
   useEffect(() => { load(1); }, [categorie, params]);
 
-  const exportCsv = () => {
-    const qs = new URLSearchParams({
-      ...(q ? { q } : {}), ...(com ? { com } : {}), ...(categorie ? { categorie } : {}),
-    });
-    const snap = params.get("snapshot");
-    if (snap) qs.set("snapshot", snap);
-    window.open(`/api/export?${qs}`, "_blank");
-  };
-
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Détail des dossiers</h1>
@@ -60,7 +51,6 @@ function DetailsInner() {
           {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
         </select>
         <button onClick={() => load(1)} className="rounded bg-marine-800 px-3 py-1 text-white dark:bg-gold-300 dark:text-marine-900 dark:hover:bg-gold-400">Filtrer</button>
-        <button onClick={exportCsv} className="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Export CSV (vue filtrée)</button>
         {(q || com || categorie) && <span className="text-xs text-slate-500 self-center dark:text-slate-400">Filtres actifs depuis le tableau de bord via l&apos;URL.</span>}
       </div>
       {error && <div className="rounded bg-white p-4 text-sm text-red-600 dark:bg-slate-900 dark:text-red-400">{error}</div>}

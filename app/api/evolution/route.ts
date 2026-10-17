@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 function readFilters(url: URL): AggFilters {
   return {
     agence: url.searchParams.get("agence") ?? undefined,
+    unite: url.searchParams.get("unite") ?? undefined,
     com: url.searchParams.get("com") ?? undefined,
     categorie: url.searchParams.get("categorie") ?? undefined,
     q: url.searchParams.get("q") ?? undefined,

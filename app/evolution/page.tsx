@@ -37,11 +37,12 @@ function pctStr(pct: number | null): string {
 
 type ComSortKey = "com" | "ancien" | "recent" | "variation" | "pct";
 
-type Filters = { agence: string; com: string; categorie: string; q: string };
-const NO_FILTERS: Filters = { agence: "", com: "", categorie: "", q: "" };
+type Filters = { agence: string; unite: string; com: string; categorie: string; q: string };
+const NO_FILTERS: Filters = { agence: "", unite: "", com: "", categorie: "", q: "" };
 
 function appendFilters(qs: URLSearchParams, f: Filters) {
   if (f.agence) qs.set("agence", f.agence);
+  if (f.unite) qs.set("unite", f.unite);
   if (f.com) qs.set("com", f.com);
   if (f.categorie) qs.set("categorie", f.categorie);
   if (f.q) qs.set("q", f.q);
@@ -53,7 +54,7 @@ export default function EvolutionPage() {
   const [n1, setN1] = useState("");
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
-  const [options, setOptions] = useState<{ agences: string[]; coms: string[] }>({ agences: [], coms: [] });
+  const [options, setOptions] = useState<{ agences: string[]; unites: string[]; coms: string[] }>({ agences: [], unites: [], coms: [] });
   const [comSort, setComSort] = useState<{ key: ComSortKey; dir: "asc" | "desc" }>({ key: "variation", dir: "desc" });
 
   const load = async (a?: string, b?: string, f: Filters = filters) => {
@@ -165,8 +166,10 @@ export default function EvolutionPage() {
 
       <FilterBar
         agences={options.agences}
+        unites={options.unites}
         coms={options.coms}
         fAgence={filters.agence}
+        fUnite={filters.unite}
         fCom={filters.com}
         fCategorie={filters.categorie}
         fQ={filters.q}

@@ -17,6 +17,7 @@ export const CAT_COLUMNS: Record<string, string> = {
 export interface AggFilters {
   q?: string;
   agence?: string;
+  unite?: string;
   com?: string;
   categorie?: string;
 }
@@ -28,6 +29,7 @@ export function buildAggWhere(f: AggFilters, p0 = 2) {
   const geo: string[] = [];
   let p = p0;
   if (f.agence) { all.push(`agency_name=$${p}`); geo.push(`agency_name=$${p}`); params.push(f.agence); p++; }
+  if (f.unite) { all.push(`com_unit_name=$${p}`); geo.push(`com_unit_name=$${p}`); params.push(f.unite); p++; }
   if (f.com) { all.push(`com_name=$${p}`); geo.push(`com_name=$${p}`); params.push(f.com); p++; }
   if (f.q) { all.push(`(dossier ILIKE $${p} OR com_name ILIKE $${p})`); params.push(`%${f.q}%`); p++; }
   if (f.categorie && CAT_COLUMNS[f.categorie]) all.push(`${CAT_COLUMNS[f.categorie]}=1`);
@@ -41,12 +43,13 @@ export function buildAggWhere(f: AggFilters, p0 = 2) {
 
 export async function filterOptions(pool: Pool, importId: number) {
   const r = await pool.query(
-    `SELECT DISTINCT agency_name, com_name FROM raw_dossier_details WHERE import_id=$1`,
+    `SELECT DISTINCT agency_name, com_unit_name, com_name FROM raw_dossier_details WHERE import_id=$1`,
     [importId]
   );
   const agences = [...new Set(r.rows.map((x) => x.agency_name).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr")) as string[];
+  const unites = [...new Set(r.rows.map((x) => x.com_unit_name).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr")) as string[];
   const coms = [...new Set(r.rows.map((x) => x.com_name).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr")) as string[];
-  return { agences, coms };
+  return { agences, unites, coms };
 }
 
 export async function latestSnapshotId(pool: Pool, fileType = "A"): Promise<number | null> {
