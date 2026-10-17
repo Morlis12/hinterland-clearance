@@ -13,7 +13,9 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push",
     "import": "tsx scripts/import.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:demo-snapshot": "tsx scripts/seed-demo-snapshot.ts",
+    "seed:demo-clean": "tsx scripts/seed-demo-clean.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.4",

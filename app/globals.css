@@ -44,10 +44,6 @@ body {
   fill: var(--chart-tick);
 }
 
-.chart-trend .recharts-line-curve {
-  stroke: var(--chart-bar);
-}
-
 /* ---------- Page de connexion : animations discrètes ---------- */
 
 @keyframes hero-zoom {

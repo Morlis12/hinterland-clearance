@@ -152,8 +152,8 @@ export async function evolutionCompare(pool: Pool, idA: number, idB: number) {
   // idA = N-1 (ancien), idB = N (récent)
   const catSums = (alias: string) =>
     CATEGORIES.map((c) => `COALESCE(SUM(${alias}.${CAT_COLUMNS[c.key]}),0)::int AS "${c.key}"`).join(", ");
-  const a = await pool.query(`SELECT COUNT(*)::int AS total, ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1`, [idA]);
-  const b = await pool.query(`SELECT COUNT(*)::int AS total, ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1`, [idB]);
+  const a = await pool.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1`, [idA]);
+  const b = await pool.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums("d")} FROM raw_dossier_details d WHERE import_id=$1`, [idB]);
   const byCom = await pool.query(
     `WITH a AS (SELECT com_name AS com, COUNT(*)::int AS total FROM raw_dossier_details WHERE import_id=$1 GROUP BY 1),
           b AS (SELECT com_name AS com, COUNT(*)::int AS total FROM raw_dossier_details WHERE import_id=$2 GROUP BY 1)

@@ -42,13 +42,9 @@ export default function DashboardPage() {
   if (!data) return <div className="rounded bg-white p-6 dark:bg-slate-900">Chargement…</div>;
 
   const k = data.kpis;
-  const evo = data.evolution as { previous: Record<string, number>; recent: Record<string, number> } | null;
-  const deltaFor = (cur: number, prev: unknown): number | null | undefined => {
-    if (!evo) return undefined;
-    const p = Number(prev ?? 0);
-    if (!Number.isFinite(p) || p === 0) return null;
-    return (100 * (cur - p)) / p;
-  };
+  const prevKpis = data.evolution?.previous as Record<string, number> | undefined;
+  const prevOf = (key: string, fallbackKey?: string): number | undefined =>
+    prevKpis ? Number(prevKpis[key] ?? (fallbackKey ? prevKpis[fallbackKey] : undefined) ?? 0) : undefined;
   const catData = CATS.map((c) => ({ name: c.label, value: Number(k[c.key] ?? 0), key: c.key }));
   const top = (showAll ? data.top : data.top.slice(0, 15));
   const comData = top.map((t: any) => ({ name: String(t.com).slice(0, 24), total: t.total, com: t.com }));
@@ -62,9 +58,9 @@ export default function DashboardPage() {
       <Legend />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-        <KpiCard label="Total dossiers en retard (distincts)" value={k.totalAvecRetard ?? k.total} href={`/details?snapshot=${snapshot}`} accent="border-red-600" delta={deltaFor(Number(k.totalAvecRetard ?? k.total), evo?.previous?.totalAvecRetard ?? evo?.previous?.total)} />
+        <KpiCard label="Total dossiers en retard (distincts)" value={k.totalAvecRetard ?? k.total} href={`/details?snapshot=${snapshot}`} accent="border-red-600" previousValue={prevOf("totalAvecRetard", "total")} />
         {CATS.slice(0, 9).map((c) => (
-          <KpiCard key={c.key} label={c.label} value={k[c.key] ?? 0} href={`/details?snapshot=${snapshot}&categorie=${c.key}`} delta={deltaFor(Number(k[c.key] ?? 0), evo?.previous?.[c.key])} />
+          <KpiCard key={c.key} label={c.label} value={k[c.key] ?? 0} href={`/details?snapshot=${snapshot}&categorie=${c.key}`} previousValue={prevOf(c.key)} />
         ))}
       </div>
 

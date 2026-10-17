@@ -16,13 +16,13 @@ export async function GET(req: Request) {
   const kpis = await dashboardKpis(pool, importId);
   const top = await topComs(pool, importId, Number(url.searchParams.get("limit") ?? 15));
   const snapshots = await listSnapshots(pool, "A");
-  // mini-évolution : deux dernières extractions
-  let evolution: unknown = null;
-  if (snapshots.length >= 2) {
-    const [n, prev] = [snapshots[0].id, snapshots[1].id];
-    const kpN = await dashboardKpis(pool, n);
-    const kpP = await dashboardKpis(pool, prev);
-    evolution = { recent: kpN, previous: kpP };
+  // N-1 = snapshot A immédiatement précédent celui sélectionné (état global de la base)
+  let evolution: { previous: Awaited<ReturnType<typeof dashboardKpis>>; recent: Awaited<ReturnType<typeof dashboardKpis>> } | null = null;
+  const idx = snapshots.findIndex((s: { id: number }) => s.id === importId);
+  const prevSnap = idx >= 0 && idx + 1 < snapshots.length ? snapshots[idx + 1] : null;
+  if (prevSnap) {
+    const kpP = await dashboardKpis(pool, prevSnap.id);
+    evolution = { previous: kpP, recent: kpis };
   }
   return NextResponse.json({ importId, kpis, top, snapshots, evolution });
 }

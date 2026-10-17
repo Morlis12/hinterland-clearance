@@ -1,30 +1,45 @@
 "use client";
 
-export function KpiCard({ label, value, href, accent, delta }: { label: string; value: number | string; href?: string; accent?: string; delta?: number | null }) {
+/** Date AAAA-MM-JJ -> jj/mm/aaaa (jamais d'ISO brut à l'écran). */
+export function formatDateFR(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso ?? "");
+}
+
+export function KpiCard({
+  label, value, href, accent, previousValue,
+}: {
+  label: string;
+  value: number | string;
+  href?: string;
+  accent?: string;
+  previousValue?: number;
+}) {
+  const cur = Number(value);
+  const noPrev = previousValue === undefined;
+  const diff = noPrev ? 0 : cur - (previousValue as number);
+  const arrow = diff > 0 ? "▲" : diff < 0 ? "▼" : "▬";
+  const cls = noPrev
+    ? "text-slate-400 dark:text-slate-500"
+    : diff > 0
+      ? "text-red-600 dark:text-red-400"
+      : diff < 0
+        ? "text-green-700 dark:text-green-400"
+        : "text-slate-500 dark:text-slate-400";
+  const diffStr = `${diff > 0 ? "+" : ""}${diff.toLocaleString("fr-FR")}`;
+  const pct = !noPrev && (previousValue as number) > 0 ? (100 * diff) / (previousValue as number) : null;
+  const pctStr = pct === null ? null : `${pct > 0 ? "+" : ""}${pct.toLocaleString("fr-FR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`;
+
   const inner = (
-    <div className={`rounded-lg bg-white p-4 shadow-sm border-l-4 dark:bg-slate-900 dark:shadow-none ${accent ?? "border-marine-800 dark:border-gold-300"}`}>
-      <div className="text-2xl font-extrabold text-marine-900 dark:text-white">{Number(value).toLocaleString("fr-FR")}</div>
-      <div className="text-sm text-slate-600 dark:text-slate-400">{label}</div>
-      {delta !== undefined && (
-        <div
-          title="Variation vs extraction précédente"
-          className={`mt-1 text-xs font-semibold ${
-            delta === null
-              ? "text-slate-400 dark:text-slate-500"
-              : delta > 0
-                ? "text-red-600 dark:text-red-400"
-                : delta < 0
-                  ? "text-green-700 dark:text-green-400"
-                  : "text-slate-500 dark:text-slate-400"
-          }`}
-        >
-          {delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta.toLocaleString("fr-FR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`}
-          <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">vs N-1</span>
-        </div>
-      )}
+    <div className={`flex h-full flex-col rounded-lg bg-white p-4 shadow-sm border-l-4 dark:bg-slate-900 dark:shadow-none ${accent ?? "border-marine-800 dark:border-gold-300"}`}>
+      <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</div>
+      <div className="my-1 text-2xl font-extrabold text-marine-900 dark:text-white">{cur.toLocaleString("fr-FR")}</div>
+      <div className={`mt-auto text-xs font-semibold ${cls}`} title="Variation vs extraction précédente">
+        {noPrev ? "Pas de comparaison" : `${arrow} ${diffStr}${pctStr ? ` (${pctStr})` : ""}`}
+      </div>
     </div>
   );
-  if (href) return <a href={href} className="block hover:shadow-md transition-shadow">{inner}</a>;
+  if (href) return <a href={href} className="block h-full hover:shadow-md transition-shadow">{inner}</a>;
   return inner;
 }
 
@@ -41,7 +56,7 @@ export function SnapshotSelector({
       >
         {snapshots.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.extraction_date} — {s.file_name}
+            {formatDateFR(s.extraction_date)} — {s.file_name}
           </option>
         ))}
       </select>

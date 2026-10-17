@@ -1,26 +1,48 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { formatDateFR } from "@/components/ui";
 
-const CATS = [
-  { key: "total", label: "Total" },
-  { key: "bae", label: "BAE" },
-  { key: "factDouane", label: "Douane" },
-  { key: "miseEnLivraison", label: "Mise livr." },
-  { key: "livraison", label: "Livraison" },
-  { key: "retourConteneur", label: "Retour" },
-  { key: "declaresNonFactures", label: "Décl. non fact." },
-  { key: "factPrestation", label: "Fact. prest." },
-  { key: "archivage", label: "Archivage" },
-  { key: "sansDeclaration", label: "Sans décl." },
-  { key: "debours", label: "Débours" },
+const CATS: { key: string; label: string; color: string }[] = [
+  { key: "total", label: "Total", color: "#6366f1" },
+  { key: "bae", label: "BAE", color: "#ef4444" },
+  { key: "factDouane", label: "Douane", color: "#f97316" },
+  { key: "miseEnLivraison", label: "Mise livr.", color: "#eab308" },
+  { key: "livraison", label: "Livraison", color: "#84cc16" },
+  { key: "retourConteneur", label: "Retour", color: "#10b981" },
+  { key: "declaresNonFactures", label: "Décl. non fact.", color: "#06b6d4" },
+  { key: "factPrestation", label: "Fact. prest.", color: "#3b82f6" },
+  { key: "archivage", label: "Archivage", color: "#8b5cf6" },
+  { key: "sansDeclaration", label: "Sans décl.", color: "#ec4899" },
+  { key: "debours", label: "Débours", color: "#14b8a6" },
 ];
+
+function varCls(v: number): string {
+  return v > 0
+    ? "text-red-600 font-semibold dark:text-red-400"
+    : v < 0
+      ? "text-green-700 font-semibold dark:text-green-400"
+      : "text-slate-500 dark:text-slate-400";
+}
+function arrowOf(v: number): string {
+  return v > 0 ? "▲" : v < 0 ? "▼" : "▬";
+}
+function diffStr(v: number): string {
+  return `${v > 0 ? "+" : ""}${v.toLocaleString("fr-FR")}`;
+}
+function pctStr(pct: number | null): string {
+  if (pct === null) return "—";
+  return `${pct > 0 ? "+" : ""}${pct.toLocaleString("fr-FR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`;
+}
+
+type ComSortKey = "com" | "ancien" | "recent" | "variation" | "pct";
 
 export default function EvolutionPage() {
   const [data, setData] = useState<any>(null);
   const [n, setN] = useState("");
   const [n1, setN1] = useState("");
   const [error, setError] = useState("");
+  const [comSort, setComSort] = useState<{ key: ComSortKey; dir: "asc" | "desc" }>({ key: "variation", dir: "desc" });
 
   const load = async (a?: string, b?: string) => {
     setError("");
@@ -39,6 +61,27 @@ export default function EvolutionPage() {
 
   useEffect(() => { load(); }, []);
 
+  const comRows = useMemo(() => {
+    if (!data?.parCom) return [];
+    const rows = data.parCom.map((r: any) => {
+      const ancien = Number(r.ancien ?? 0);
+      const recent = Number(r.recent ?? 0);
+      const variation = recent - ancien;
+      return { com: r.com, ancien, recent, variation, pct: ancien > 0 ? (100 * variation) / ancien : null };
+    });
+    const dir = comSort.dir === "asc" ? 1 : -1;
+    rows.sort((a: any, b: any) => {
+      if (comSort.key === "com") return dir * String(a.com ?? "").localeCompare(String(b.com ?? ""), "fr");
+      const va = a[comSort.key];
+      const vb = b[comSort.key];
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      return dir * (va - vb);
+    });
+    return rows;
+  }, [data, comSort]);
+
   if (error) return <div className="rounded bg-white p-6 text-red-600 dark:bg-slate-900 dark:text-red-400">{error}</div>;
   if (!data) return <div className="rounded bg-white p-6 dark:bg-slate-900">Chargement…</div>;
   if (data.single) return (
@@ -52,24 +95,56 @@ export default function EvolutionPage() {
     const a = Number(data.ancien[c.key] ?? 0);
     const b = Number(data.recent[c.key] ?? 0);
     const v = b - a;
-    const pct = a ? (100 * v / a) : null;
+    const pct = a ? (100 * v) / a : null;
     return { ...c, ancien: a, recent: b, variation: v, pct };
   });
+
+  const totA = Number(data.ancien.totalAvecRetard ?? data.ancien.total ?? 0);
+  const totB = Number(data.recent.totalAvecRetard ?? data.recent.total ?? 0);
+  const dTot = totB - totA;
+  const pctTot = totA > 0 ? (100 * dTot) / totA : null;
+
+  const Th = ({ k, children, right }: { k: ComSortKey; children: ReactNode; right?: boolean }) => (
+    <th
+      className={`cursor-pointer select-none whitespace-nowrap ${right ? "text-right" : "text-left"}`}
+      onClick={() =>
+        setComSort((s) => (s.key === k ? { key: k, dir: s.dir === "asc" ? "desc" : "asc" } : { key: k, dir: k === "com" ? "asc" : "desc" }))
+      }
+    >
+      {children}
+      {comSort.key === k ? (comSort.dir === "asc" ? " ▲" : " ▼") : ""}
+    </th>
+  );
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Évolution</h1>
       <div className="flex flex-wrap gap-3 text-sm">
-        <label>N-1 : <select value={n1} onChange={(e) => setN1(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-          {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{s.extraction_date} — {s.file_name}</option>)}
+        <label>Extraction précédente (N-1) : <select value={n1} onChange={(e) => { setN1(e.target.value); load(e.target.value, n); }} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+          {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{formatDateFR(s.extraction_date)} — {s.file_name}</option>)}
         </select></label>
-        <label>N : <select value={n} onChange={(e) => setN(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-          {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{s.extraction_date} — {s.file_name}</option>)}
+        <label>Extraction actuelle (N) : <select value={n} onChange={(e) => { setN(e.target.value); load(n1, e.target.value); }} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+          {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{formatDateFR(s.extraction_date)} — {s.file_name}</option>)}
         </select></label>
-        <button onClick={() => load(n1, n)} className="rounded bg-marine-800 px-3 py-1 text-white dark:bg-gold-300 dark:text-marine-900 dark:hover:bg-gold-400">Comparer</button>
       </div>
+
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">Total dossiers en retard (distincts)</div>
+          <div className="text-2xl font-extrabold text-marine-900 dark:text-white">
+            {totA.toLocaleString("fr-FR")} <span className="text-slate-400">→</span> {totB.toLocaleString("fr-FR")}
+          </div>
+        </div>
+        <div className={`text-lg font-bold ${varCls(dTot)}`}>
+          {arrowOf(dTot)} {diffStr(dTot)} {pctTot !== null && <span className="text-base font-semibold">({pctStr(pctTot)})</span>}
+        </div>
+        <div className="text-xs text-slate-500 dark:text-slate-400">
+          Extraction du {formatDateFR(data.previousSnap?.extraction_date)} (N-1) au {formatDateFR(data.recentSnap?.extraction_date)} (N)
+        </div>
+      </div>
+
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Rouge = dégradation (retards en hausse), vert = amélioration (en baisse), gris = stable. L&apos;orange n&apos;est qu&apos;un repère visuel pour les faibles variations.
+        Rouge = dégradation (retards en hausse), vert = amélioration (en baisse), gris = stable.
       </p>
 
       <div className="rounded-lg bg-white p-4 shadow-sm overflow-x-auto dark:bg-slate-900 dark:shadow-none">
@@ -77,39 +152,41 @@ export default function EvolutionPage() {
         <table className="min-w-full text-sm">
           <thead><tr className="text-left text-slate-500 dark:text-slate-400"><th>Catégorie</th><th>N-1</th><th>N</th><th>Variation</th><th>Variation %</th></tr></thead>
           <tbody>
-            {rows.map((r) => {
-              const cls = r.variation > 0 ? "text-red-600 font-semibold dark:text-red-400" : r.variation < 0 ? "text-green-700 font-semibold dark:text-green-400" : "text-slate-500 dark:text-slate-400";
-              const warn = Math.abs(r.variation) > 0 && r.ancien > 0 && Math.abs(r.variation / r.ancien) < 0.03;
-              return (
-                <tr key={r.key} className="border-t dark:border-slate-800">
-                  <td>{r.label}</td><td>{r.ancien.toLocaleString("fr-FR")}</td><td>{r.recent.toLocaleString("fr-FR")}</td>
-                  <td className={warn ? "text-orange-500 font-semibold" : cls}>{r.variation > 0 ? `+${r.variation}` : r.variation}</td>
-                  <td className={warn ? "text-orange-500" : cls}>{r.pct === null ? "—" : `${r.pct.toFixed(1)} %`}</td>
-                </tr>
-              );
-            })}
+            {rows.map((r) => (
+              <tr key={r.key} className="border-t dark:border-slate-800">
+                <td>{r.label}</td><td>{r.ancien.toLocaleString("fr-FR")}</td><td>{r.recent.toLocaleString("fr-FR")}</td>
+                <td className={varCls(r.variation)}>{arrowOf(r.variation)} {diffStr(r.variation)}</td>
+                <td className={varCls(r.variation)}>{pctStr(r.pct)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm overflow-x-auto dark:bg-slate-900 dark:shadow-none">
+      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
         <h2 className="mb-2 font-semibold">Par COM</h2>
-        <table className="min-w-full text-sm">
-          <thead><tr className="text-left text-slate-500 dark:text-slate-400"><th>COM</th><th>N-1</th><th>N</th><th>Variation</th><th>Variation %</th></tr></thead>
-          <tbody>
-            {data.parCom.slice(0, 100).map((r: any, i: number) => {
-              const cls = r.variation > 0 ? "text-red-600 dark:text-red-400" : r.variation < 0 ? "text-green-700 dark:text-green-400" : "text-slate-400";
-              const pct = r.ancien > 0 ? (100 * r.variation) / r.ancien : null;
-              return (
+        <div className="max-h-96 overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead className="sticky top-0 bg-white dark:bg-slate-900">
+              <tr className="text-slate-500 dark:text-slate-400">
+                <Th k="com">COM</Th><Th k="ancien" right>N-1</Th><Th k="recent" right>N</Th>
+                <Th k="variation" right>Variation</Th><Th k="pct" right>Variation %</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {comRows.map((r: any, i: number) => (
                 <tr key={i} className="border-t dark:border-slate-800">
-                  <td>{r.com}</td><td>{r.ancien}</td><td>{r.recent}</td>
-                  <td className={cls}>{r.variation > 0 ? `+${r.variation}` : r.variation}</td>
-                  <td className={cls}>{pct === null ? "—" : `${pct.toFixed(1)} %`}</td>
+                  <td>{r.com}</td>
+                  <td className="text-right">{r.ancien.toLocaleString("fr-FR")}</td>
+                  <td className="text-right">{r.recent.toLocaleString("fr-FR")}</td>
+                  <td className={`text-right ${varCls(r.variation)}`}>{arrowOf(r.variation)} {diffStr(r.variation)}</td>
+                  <td className={`text-right ${varCls(r.variation)}`}>{pctStr(r.pct)}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+              {comRows.length === 0 && <tr><td colSpan={5} className="py-4 text-center text-slate-400">Aucune donnée.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
@@ -121,28 +198,69 @@ export default function EvolutionPage() {
 }
 
 function TrendChart({ snapshots }: { snapshots: any[] }) {
-  const [series, setSeries] = useState<any[]>([]);
+  const [series, setSeries] = useState<any[] | null>(null);
+  const [selected, setSelected] = useState<string[]>(["total"]);
   useEffect(() => {
     (async () => {
-      const out = [];
+      const out: any[] = [];
       for (const s of [...snapshots].reverse()) {
         const r = await fetch(`/api/dashboard?snapshot=${s.id}`).then((x) => x.json());
-        out.push({ date: s.extraction_date, total: r.kpis?.totalAvecRetard ?? r.kpis?.total ?? 0 });
+        const k = r.kpis ?? {};
+        const row: any = {
+          date: formatDateFR(s.extraction_date),
+          total: Number(k.totalAvecRetard ?? k.total ?? 0),
+        };
+        for (const c of CATS.slice(1)) row[c.key] = Number(k[c.key] ?? 0);
+        out.push(row);
       }
       setSeries(out);
     })();
   }, [snapshots]);
+
+  const toggle = (key: string) =>
+    setSelected((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
+
+  const active = CATS.filter((c) => selected.includes(c.key));
+
   return (
-    <div className="chart-trend" style={{ height: 260 }}>
-      <ResponsiveContainer>
-        <LineChart data={series}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-          <YAxis />
-          <Tooltip />
-          <Line type="monotone" dataKey="total" stroke="#162f7d" strokeWidth={2} dot />
-        </LineChart>
-      </ResponsiveContainer>
+    <div>
+      <div className="mb-2 flex flex-wrap gap-2">
+        {CATS.map((c) => {
+          const on = selected.includes(c.key);
+          return (
+            <button
+              key={c.key}
+              onClick={() => toggle(c.key)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                on
+                  ? "border-slate-400 bg-slate-100 font-semibold dark:border-slate-500 dark:bg-slate-800"
+                  : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"
+              }`}
+            >
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="chart-trend" style={{ height: 300 }}>
+        {series === null ? (
+          <div className="p-4 text-sm text-slate-500 dark:text-slate-400">Chargement…</div>
+        ) : (
+          <ResponsiveContainer>
+            <LineChart data={series}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis />
+              <Tooltip />
+              {active.map((c) => (
+                <Line key={c.key} type="monotone" dataKey={c.key} name={c.label} stroke={c.color} strokeWidth={2} dot={{ r: 2 }} />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Cliquez sur une catégorie ci-dessus pour l&apos;afficher ou la masquer.</p>
     </div>
   );
 }

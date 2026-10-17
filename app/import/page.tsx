@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { formatDateFR } from "@/components/ui";
 
 const MAX_BYTES = 4718592;
 const MO = 1048576;
@@ -168,7 +169,7 @@ export default function ImportPage() {
                   </p>
                   {i.preview && (
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Extraction : <strong>{i.preview.extractionDate || "introuvable"}</strong> · {i.preview.detailCount} dossiers · {i.preview.summaryCount} COM · {i.preview.subtotalCount} sous-totaux
+                      Extraction : <strong>{formatDateFR(i.preview.extractionDate) || "introuvable"}</strong> · {i.preview.detailCount} dossiers · {i.preview.summaryCount} COM · {i.preview.subtotalCount} sous-totaux
                       {i.preview.warnings?.length ? ` · ${i.preview.warnings.length} avertissement${i.preview.warnings.length > 1 ? "s" : ""}` : ""}
                     </p>
                   )}
@@ -224,9 +225,9 @@ export default function ImportPage() {
             <tbody>
               {history.map((h: any) => (
                 <tr key={h.id} className="border-t dark:border-slate-800">
-                  <td>{h.id}</td><td>{h.fileName}</td><td>{h.fileType}</td><td>{String(h.extractionDate).slice(0, 10)}</td>
+                  <td>{h.id}</td><td>{h.fileName}</td><td>{h.fileType}</td><td>{formatDateFR(h.extractionDate)}</td>
                   <td>{new Date(h.loadedAt).toLocaleString("fr-FR")}</td><td className="text-right">{Number(h.rowCount).toLocaleString("fr-FR")}</td>
-                  <td><StatusBadge status={h.status} /></td><td>{h.origin}</td>
+                  <td><StatusBadge status={h.status} /></td><td>{h.origin === "demo" ? "DÉMO" : h.origin}</td>
                 </tr>
               ))}
               {history.length === 0 && <tr><td colSpan={8} className="py-4 text-center text-slate-400 dark:text-slate-500">Aucun import pour l&apos;instant.</td></tr>}

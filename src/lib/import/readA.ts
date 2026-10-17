@@ -248,11 +248,6 @@ export async function parseFileA(buffer: Buffer, fileName: string): Promise<Pars
       warnings.push(`Sheet2 ligne ${r} : numéro de dossier vide — ligne ignorée.`);
       continue;
     }
-    // Ligne de total résiduelle : pas d'agence ni COM.
-    if (!agence && !unite && !com) {
-      totalRowSkipped++;
-      continue;
-    }
 
     const flags: Record<string, number> = {};
     for (const c of CATEGORIES) {
