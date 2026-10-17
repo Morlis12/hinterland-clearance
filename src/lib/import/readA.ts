@@ -100,7 +100,7 @@ export async function parseFileA(buffer: Buffer, fileName: string): Promise<Pars
   if (!s1 || !s2) {
     errors.push(
       `Feuilles attendues "Sheet1" et "Sheet2" introuvables (feuilles vues : ${sheetNames.join(", ")}). ` +
-        `Si votre fichier ne contient que "Feuil1", il s'agit du Fichier B : utilisez le script CLI (npm run import).`
+        `Si votre fichier ne contient que "Feuil1", il s'agit des dossiers non archivés : ce fichier ne peut pas être chargé depuis l'interface.`
     );
     return {
       kind: "A", sha256, fileName, extractionDate: "",

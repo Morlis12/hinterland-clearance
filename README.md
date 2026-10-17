@@ -87,9 +87,9 @@ npm run import -- --file data/Dossiers_Hinterland_Non_Archivés_par_COM.xlsx --d
   (le plus récent fait foi) au lieu de refuser. L'historique n'est **jamais écrasé**.
 - Échec en cours de route : import marqué « Échec », ses lignes partielles sont retirées
   (seul cet `import_id`), les autres snapshots sont intacts.
-- Interface web (`/import`, Fichier A uniquement, ≤ ~4 Mo) : drag-and-drop, contrôle des
-  feuilles/colonnes, aperçu, erreurs/avertissements, historique
-  (Réussi / Avertissements / Échec, origine web/cli).
+- Interface web (`/import`, Fichier A uniquement, ≤ 4,5 Mo par fichier, **plusieurs fichiers
+  déposables d'affilée**) : drag-and-drop multiple, contrôle par fichier, import groupé,
+  erreurs/avertissements, historique (Réussi / Avertissements / Échec, origine web/cli).
 
 ## Règles métier (rappel — aucune règle inventée)
 

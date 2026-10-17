@@ -10,9 +10,6 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const CLI_HINT =
-  "Pour les fichiers volumineux (Fichier B ou > 4 Mo), utilisez le script CLI : npm run import -- --file chemin.xlsx --date AAAA-MM-JJ";
-
 export async function POST(req: Request) {
   const url = new URL(req.url);
   const previewOnly = url.searchParams.get("preview") === "1";
@@ -32,7 +29,7 @@ export async function POST(req: Request) {
   const maxBytes = config.maxUploadBytes;
   if (file.size > maxBytes) {
     return NextResponse.json(
-      { error: `Fichier trop volumineux (${(file.size / 1048576).toFixed(1)} Mo > ${(maxBytes / 1048576).toFixed(1)} Mo). ${CLI_HINT}` },
+      { error: `Fichier trop volumineux (${(file.size / 1048576).toFixed(1)} Mo, maximum ${(maxBytes / 1048576).toFixed(1)} Mo).` },
       { status: 413 }
     );
   }
@@ -45,8 +42,8 @@ export async function POST(req: Request) {
       {
         error:
           detected.kind === "B"
-            ? `Fichier B détecté (feuille Feuil1, gros volume) : l'import web est interdit. ${CLI_HINT}`
-            : `Type de fichier non reconnu (feuilles : ${detected.sheets.join(", ")}). ${CLI_HINT}`,
+            ? `Ce fichier (dossiers non archivés, feuille « Feuil1 », très volumineux) ne peut pas être chargé depuis l'interface.`
+            : `Fichier non reconnu (feuilles trouvées : ${detected.sheets.join(", ")}). Le fichier attendu contient les feuilles « Sheet1 » et « Sheet2 ».`,
       },
       { status: 415 }
     );
@@ -76,7 +73,7 @@ export async function POST(req: Request) {
     if (err.duplicate) {
       logger.warn("import web doublon, confirmation requise", { file: file.name });
       return NextResponse.json(
-        { error: err.message, duplicate: true, duplicates: err.duplicates, confirmHint: "Relancez avec ?force=1 pour conserver les deux imports." },
+        { error: err.message, duplicate: true, duplicates: err.duplicates, confirmHint: "Cliquez sur « Importer quand même » pour conserver les deux imports." },
         { status: 409 }
       );
     }
