@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { formatDateFR } from "@/components/ui";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { formatDateFR, InfoBanner } from "@/components/ui";
 
 const CATS: { key: string; label: string; color: string }[] = [
   { key: "total", label: "Total", color: "#6366f1" },
@@ -143,9 +143,9 @@ export default function EvolutionPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <InfoBanner title="Lecture des couleurs" storageKey="hinterland-evolution-colors">
         Rouge = dégradation (retards en hausse), vert = amélioration (en baisse), gris = stable.
-      </p>
+      </InfoBanner>
 
       <div className="rounded-lg bg-white p-4 shadow-sm overflow-x-auto dark:bg-slate-900 dark:shadow-none">
         <h2 className="mb-2 font-semibold">Par catégorie</h2>
@@ -249,7 +249,6 @@ function TrendChart({ snapshots }: { snapshots: any[] }) {
         ) : (
           <ResponsiveContainer>
             <LineChart data={series}>
-              <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis />
               <Tooltip />

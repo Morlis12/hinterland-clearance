@@ -48,6 +48,8 @@ export default function ComsPage() {
     return out;
   }, [rows, fAgence, fUnite, sort, dir]);
 
+  const maxTotal = useMemo(() => Math.max(1, ...filtered.map((x) => Number(x.total) || 0)), [filtered]);
+
   const toggleSort = (key: string) => {
     if (sort === key) setDir(dir === "asc" ? "desc" : "asc");
     else { setSort(key); setDir("desc"); }
@@ -61,7 +63,7 @@ export default function ComsPage() {
       <div className="flex flex-wrap gap-3 text-sm">
         <label>Agence : <select value={fAgence} onChange={(e) => setFAgence(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{agences.map((a) => <option key={a} value={a}>{a}</option>)}</select></label>
         <label>Unité : <select value={fUnite} onChange={(e) => setFUnite(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{unites.map((a) => <option key={a} value={a}>{a}</option>)}</select></label>
-        <span className="text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible).</span>
+        <span className="text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge d&apos;autant plus intense que les retards sont nombreux.</span>
       </div>
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-slate-900 dark:shadow-none">
         <table className="min-w-full text-xs">
@@ -75,24 +77,34 @@ export default function ComsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((x, i) => (
-              <tr key={i} className="border-t hover:bg-blue-50 cursor-pointer dark:border-slate-800 dark:hover:bg-slate-800" onClick={() => setSelected(x)}>
-                <td className="px-2 py-1 font-medium">{x.com}</td>
-                <td className="px-2 py-1">{x.uniteCom}</td>
-                <td className="px-2 py-1 text-right">{x.dossiersValides ?? "—"}</td>
-                <td className="px-2 py-1 text-right">{x.bae}</td>
-                <td className="px-2 py-1 text-right">{x.factDouane}</td>
-                <td className="px-2 py-1 text-right">{x.miseEnLivraison}</td>
-                <td className="px-2 py-1 text-right">{x.livraison}</td>
-                <td className="px-2 py-1 text-right">{x.retourConteneur}</td>
-                <td className="px-2 py-1 text-right">{x.declaresNonFactures}</td>
-                <td className="px-2 py-1 text-right">{x.factPrestation}</td>
-                <td className="px-2 py-1 text-right">{x.archivage}</td>
-                <td className="px-2 py-1 text-right">{x.sansDeclaration}</td>
-                <td className="px-2 py-1 text-right">{x.debours}</td>
-                <td className="px-2 py-1 text-right font-bold">{x.total}</td>
-              </tr>
-            ))}
+            {filtered.map((x, i) => {
+              const t = Number(x.total) || 0;
+              const ratio = maxTotal > 0 ? t / maxTotal : 0;
+              return (
+                <tr key={i} className="border-t hover:bg-blue-50 cursor-pointer dark:border-slate-800 dark:hover:bg-slate-800" onClick={() => setSelected(x)}>
+                  <td className="px-2 py-1 font-medium">{x.com}</td>
+                  <td className="px-2 py-1">{x.uniteCom}</td>
+                  <td className="px-2 py-1 text-right">{x.dossiersValides ?? "—"}</td>
+                  <td className="px-2 py-1 text-right">{x.bae}</td>
+                  <td className="px-2 py-1 text-right">{x.factDouane}</td>
+                  <td className="px-2 py-1 text-right">{x.miseEnLivraison}</td>
+                  <td className="px-2 py-1 text-right">{x.livraison}</td>
+                  <td className="px-2 py-1 text-right">{x.retourConteneur}</td>
+                  <td className="px-2 py-1 text-right">{x.declaresNonFactures}</td>
+                  <td className="px-2 py-1 text-right">{x.factPrestation}</td>
+                  <td className="px-2 py-1 text-right">{x.archivage}</td>
+                  <td className="px-2 py-1 text-right">{x.sansDeclaration}</td>
+                  <td className="px-2 py-1 text-right">{x.debours}</td>
+                  <td
+                    className="px-2 py-1 text-right font-bold"
+                    style={{ backgroundColor: `rgba(185, 28, 28, ${(0.06 + 0.5 * ratio).toFixed(3)})` }}
+                    title={`${t} retard(s) — ${(100 * ratio).toFixed(0)} % du plus fort total affiché`}
+                  >
+                    {x.total}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { KpiCard, SnapshotSelector, Legend } from "@/components/ui";
 
@@ -70,7 +70,6 @@ export default function DashboardPage() {
           <div className="chart-cat" style={{ height: 320 }}>
             <ResponsiveContainer>
               <BarChart data={catData} layout="vertical" margin={{ left: 90 }}>
-                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
                 <Tooltip />
@@ -90,7 +89,6 @@ export default function DashboardPage() {
           <div className="chart-com" style={{ height: 320, overflowY: showAll ? "auto" : "hidden" }}>
             <ResponsiveContainer width="100%" height={showAll ? Math.max(320, comData.length * 28) : 320}>
               <BarChart data={comData} layout="vertical" margin={{ left: 90 }}>
-                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
                 <Tooltip />

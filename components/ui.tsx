@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState, type ReactNode } from "react";
 
 /** Date AAAA-MM-JJ -> jj/mm/aaaa (jamais d'ISO brut à l'écran). */
 export function formatDateFR(iso: string | null | undefined): string {
@@ -64,12 +65,43 @@ export function SnapshotSelector({
   );
 }
 
+export function InfoBanner({
+  title, storageKey, children, defaultOpen = true,
+}: { title: string; storageKey: string; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(storageKey);
+      if (v !== null) setOpen(v === "1");
+    } catch {}
+  }, [storageKey]);
+  const toggle = () => {
+    setOpen((o) => {
+      const next = !o;
+      try { localStorage.setItem(storageKey, next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
+  return (
+    <div className="rounded-lg border border-blue-100 bg-blue-50 dark:border-slate-800 dark:bg-slate-900">
+      <button
+        type="button"
+        onClick={toggle}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs text-slate-700 dark:text-slate-400"
+      >
+        <strong className="dark:text-slate-200">{title}</strong>
+        <span className="shrink-0 underline">{open ? "Réduire" : "Afficher"}</span>
+      </button>
+      {open && <div className="px-3 pb-3 text-xs text-slate-700 dark:text-slate-400">{children}</div>}
+    </div>
+  );
+}
+
 export function Legend() {
   return (
-    <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-slate-700 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400">
-      <strong className="dark:text-slate-200">Seuils SPOT (informatifs, déjà appliqués) :</strong> Air : 5 jours · Maritime & Route locale : 10 jours ·
-      Maritime Hinterland : 15 jours. L&apos;application n&apos;invente aucune règle métier et ne recalcule pas les retards.
+    <InfoBanner title="Seuils SPOT (informatifs, déjà appliqués)" storageKey="hinterland-legend-open">
+      Air : 5 jours · Maritime & Route locale : 10 jours · Maritime Hinterland : 15 jours. L&apos;application n&apos;invente aucune règle métier et ne recalcule pas les retards.
       Un dossier peut apparaître dans plusieurs catégories : la somme des catégories n&apos;est jamais un nombre de dossiers distincts.
-    </div>
+    </InfoBanner>
   );
 }
