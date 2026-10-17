@@ -48,7 +48,19 @@ export default function ComsPage() {
     return out;
   }, [rows, fAgence, fUnite, sort, dir]);
 
-  const maxTotal = useMemo(() => Math.max(1, ...filtered.map((x) => Number(x.total) || 0)), [filtered]);
+  const totals = useMemo(() => filtered.map((x) => Number(x.total) || 0), [filtered]);
+  const minTotal = Math.min(...totals, 0);
+  const maxTotal = Math.max(...totals, 1);
+  const heat = (t: number) => {
+    const ratio = maxTotal === minTotal ? 0.5 : (t - minTotal) / (maxTotal - minTotal);
+    const lerp = (a: number, b: number, x: number) => Math.round(a + (b - a) * x);
+    const red = [220, 38, 38], orange = [234, 88, 12], green = [22, 163, 74];
+    const [r, g, b] =
+      ratio >= 0.5
+        ? [lerp(orange[0], red[0], (ratio - 0.5) * 2), lerp(orange[1], red[1], (ratio - 0.5) * 2), lerp(orange[2], red[2], (ratio - 0.5) * 2)]
+        : [lerp(green[0], orange[0], ratio * 2), lerp(green[1], orange[1], ratio * 2), lerp(green[2], orange[2], ratio * 2)];
+    return `rgba(${r}, ${g}, ${b}, ${(0.18 + 0.32 * ratio).toFixed(3)})`;
+  };
 
   const toggleSort = (key: string) => {
     if (sort === key) setDir(dir === "asc" ? "desc" : "asc");
@@ -63,7 +75,7 @@ export default function ComsPage() {
       <div className="flex flex-wrap gap-3 text-sm">
         <label>Agence : <select value={fAgence} onChange={(e) => setFAgence(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{agences.map((a) => <option key={a} value={a}>{a}</option>)}</select></label>
         <label>Unité : <select value={fUnite} onChange={(e) => setFUnite(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{unites.map((a) => <option key={a} value={a}>{a}</option>)}</select></label>
-        <span className="text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge d&apos;autant plus intense que les retards sont nombreux.</span>
+        <span className="text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge (plus critique) → orange → vert (moins critique) selon le nombre de retards.</span>
       </div>
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-slate-900 dark:shadow-none">
         <table className="min-w-full text-xs">
@@ -79,7 +91,6 @@ export default function ComsPage() {
           <tbody>
             {filtered.map((x, i) => {
               const t = Number(x.total) || 0;
-              const ratio = maxTotal > 0 ? t / maxTotal : 0;
               return (
                 <tr key={i} className="border-t hover:bg-blue-50 cursor-pointer dark:border-slate-800 dark:hover:bg-slate-800" onClick={() => setSelected(x)}>
                   <td className="px-2 py-1 font-medium">{x.com}</td>
@@ -97,8 +108,8 @@ export default function ComsPage() {
                   <td className="px-2 py-1 text-right">{x.debours}</td>
                   <td
                     className="px-2 py-1 text-right font-bold"
-                    style={{ backgroundColor: `rgba(185, 28, 28, ${(0.06 + 0.5 * ratio).toFixed(3)})` }}
-                    title={`${t} retard(s) — ${(100 * ratio).toFixed(0)} % du plus fort total affiché`}
+                    style={{ backgroundColor: heat(t) }}
+                    title={`${t} retard(s) — échelle calculée sur les COM affichés (rouge = plus critique, vert = moins critique)`}
                   >
                     {x.total}
                   </td>
