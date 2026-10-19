@@ -1,5 +1,5 @@
 {
-  "name": "hinterland-overdue-monitoring",
+  "name": "agl-overdue-files-monitoring",
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",

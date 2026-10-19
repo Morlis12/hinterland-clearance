@@ -49,7 +49,7 @@ function Form() {
         className="mx-auto h-auto w-[140px] login-card-logo"
       />
       <h1 className="mt-3 text-center text-base font-bold leading-snug text-marine-800">
-        HINTERLAND — Overdue Files Monitoring
+        AGL Overdue Files Monitoring
       </h1>
       <p className="mt-1 text-center text-sm text-slate-500 login-card-tagline">
         Accès réservé — pilotage des dossiers en retard

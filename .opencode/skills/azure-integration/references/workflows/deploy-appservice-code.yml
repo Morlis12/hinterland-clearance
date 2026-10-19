@@ -1,0 +1,73 @@
+# Modèle — App Service code/zip (modèle JuriDesk).
+# Prérequis :
+#   - secret AZURE_WEBAPP_PUBLISH_PROFILE (jamais affiché)
+#   - variable WEBAPP_NAME
+#   - App settings : SCM_DO_BUILD_DURING_DEPLOYMENT=false, WEBSITE_RUN_FROM_PACKAGE=0
+#   - DATABASE_URL et secrets applicatifs configurés côté App Service, pas en CI
+#   - migrations exécutées hors CI (ou script de démarrage approuvé)
+name: Deploy App Service code
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      # URL factice pour les builds qui initialisent un client sans base.
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci?sslmode=disable
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Prepare standalone artifact
+        run: |
+          cp -r public .next/standalone/
+          cp -r .next/static .next/standalone/.next/static
+          cp package.json .next/standalone/
+          # Prisma : copier prisma/ et générer le client si nécessaire.
+          # cp -r prisma .next/standalone/prisma
+          # Drizzle : copier les migrations si un runner de démarrage les applique.
+          # cp -r drizzle .next/standalone/drizzle
+
+      - name: Zip artifact
+        run: |
+          cd .next/standalone
+          zip -r ../../deploy.zip .
+
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy.zip
+
+      - name: Wait for readiness
+        shell: bash
+        run: |
+          url="https://${{ vars.WEBAPP_NAME }}.azurewebsites.net/api/ready"
+          for i in $(seq 1 30); do
+            if curl -fsS "$url"; then
+              echo "readiness OK"
+              exit 0
+            fi
+            echo "attente readiness ($i/30)"
+            sleep 10
+          done
+          echo "readiness KO"
+          exit 1

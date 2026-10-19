@@ -1,0 +1,79 @@
+# Modèle — Azure Container Apps + OIDC + UAMI.
+# Prérequis :
+#   - app registration + federated credential limitée à ce repo/branche
+#   - secrets AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID
+#   - variables AZURE_RESOURCE_GROUP / ACR_NAME / AZURE_CONTAINER_APP / IMAGE_NAME
+#   - SP CI : AcrPush sur l'ACR + Contributor sur l'app ACA (pas tout le RG)
+#   - UAMI de l'app avec AcrPull sur l'ACR
+#   - Ne pas utiliser az acr build avec AcrPush seul (scheduleRun absent) :
+#     ce workflow utilise docker build + docker push.
+name: Deploy Azure Container App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-aca
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name "${{ vars.ACR_NAME }}"
+
+      - name: Build and push image
+        run: |
+          image="${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:${{ github.sha }}"
+          docker build -t "$image" .
+          docker push "$image"
+
+      - name: Update Container App
+        run: |
+          az containerapp update \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_CONTAINER_APP }}" \
+            --image "${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:${{ github.sha }}"
+
+      - name: Wait for readiness
+        shell: bash
+        run: |
+          fqdn=$(az containerapp show \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_CONTAINER_APP }}" \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          url="https://${fqdn}/api/ready"
+          for i in $(seq 1 30); do
+            if curl -fsS "$url"; then
+              echo "readiness OK"
+              exit 0
+            fi
+            echo "attente readiness ($i/30)"
+            sleep 10
+          done
+          echo "readiness KO"
+          exit 1

@@ -67,7 +67,7 @@ export default function LoginRoute() {
         className="route-step absolute bottom-0 left-[calc(50%_+_11px)] text-[11px] tracking-wide text-marine-800/70"
         style={{ animationDelay: "5.6s" }}
       >
-        Pilotage des dossiers Hinterland
+        Pilotage des dossiers en retard
       </p>
     </div>
   );

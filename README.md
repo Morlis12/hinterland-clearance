@@ -1,7 +1,7 @@
-# HINTERLAND — Pilotage des dossiers en retard (Overdue Files Monitoring)
+# AGL Overdue Files Monitoring — Pilotage des dossiers en retard
 
 Application web professionnelle (interface en français) pour piloter les dossiers
-opérationnels HINTERLAND en retard à partir d'extractions Excel SPOT.
+opérationnels AGL en retard à partir d'extractions Excel SPOT.
 
 - Visualisation des dossiers en retard + KPI, analyse par COM, détail des dossiers,
   comparaison de snapshots (amélioration / dégradation).
@@ -145,9 +145,9 @@ de lignes réelles** — compatible avec une base managée modeste ; au-delà, p
   région proche), `APP_PASSWORD`, `APP_SESSION_SECRET`. Aucune écriture disque, aucun état
   en mémoire, fonctions courtes uniquement (le gros import reste en CLI). Santé :
   `/api/health` (liveness, public), `/api/ready` (teste la base, public).
-- **Azure (plus tard)** : `Dockerfile` multi-stage fourni (`output: standalone`, utilisateur
-  non-root `nextjs`) + future base Azure Database for PostgreSQL Flexible Server.
-  Aucune dépendance Vercel dans la logique métier.
+- **Azure** : Web App for Containers (App Service Linux B1) + Azure Container Registry +
+  PostgreSQL Flexible Server ; image taguée par commit, déploiement via publish profile.
+  Voir `docs/migration-azure.md`. Aucune dépendance Vercel dans la logique métier.
 
 ## Sécurité
 

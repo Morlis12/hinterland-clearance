@@ -3,8 +3,8 @@ import "./globals.css";
 import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
-  title: "HINTERLAND — Pilotage des dossiers en retard",
-  description: "Suivi des dossiers opérationnels HINTERLAND en retard (extractions SPOT).",
+  title: "AGL Overdue Files Monitoring — Pilotage des dossiers en retard",
+  description: "Suivi des dossiers en retard à partir des extractions Excel SPOT (AGL Overdue Files Monitoring).",
   icons: { icon: "/favicon.svg" },
 };
 

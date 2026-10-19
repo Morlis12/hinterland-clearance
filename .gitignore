@@ -21,3 +21,9 @@ data/*
 *.tsbuildinfo
 coverage/
 .env.vercel
+.env.azure
+
+# Dumps et sauvegardes locales — jamais commités
+*.sql
+!drizzle/*.sql
+*.dump

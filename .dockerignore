@@ -1,0 +1,26 @@
+# Dépendances et artefacts de build
+node_modules
+.next
+out
+coverage
+*.tsbuildinfo
+
+# Données réelles et dumps — jamais dans l'image
+data
+*.xlsx
+*.xls
+*.csv
+*.sql
+*.dump
+
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+
+# Dépôt, docs et divers
+.git
+.github
+docs
+*.log
+.DS_Store
