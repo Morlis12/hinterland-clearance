@@ -132,7 +132,7 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
      SELECT COALESCE(ret.com_name, val.com_name) AS com,
        COALESCE(val.com_unit_name, ret.com_unit_name, '') AS "uniteCom",
        COALESCE(val.agency_name, ret.agency_name, '') AS agence,
-       MAX(val.valides) AS "dossiersValides",
+       val.valides AS "dossiersValides",
        COALESCE(ret.total,0) AS total, COALESCE(ret.bae,0) AS bae,
        COALESCE(ret."factDouane",0) AS "factDouane", COALESCE(ret."miseEnLivraison",0) AS "miseEnLivraison",
        COALESCE(ret.livraison,0) AS livraison, COALESCE(ret."retourConteneur",0) AS "retourConteneur",
@@ -140,9 +140,9 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
        COALESCE(ret."factPrestation",0) AS "factPrestation", COALESCE(ret.archivage,0) AS archivage,
        COALESCE(ret."sansDeclaration",0) AS "sansDeclaration", COALESCE(ret.debours,0) AS debours
      FROM ret FULL OUTER JOIN val
-       ON ret.com_name IS NOT DISTINCT FROM val.com_name
-      AND ret.com_unit_name IS NOT DISTINCT FROM val.com_unit_name
-      AND ret.agency_name IS NOT DISTINCT FROM val.agency_name
+       ON COALESCE(ret.com_name,'') = COALESCE(val.com_name,'')
+      AND COALESCE(ret.com_unit_name,'') = COALESCE(val.com_unit_name,'')
+      AND COALESCE(ret.agency_name,'') = COALESCE(val.agency_name,'')
       ORDER BY total DESC, com`,
     [importId, ...w.params]
   );
