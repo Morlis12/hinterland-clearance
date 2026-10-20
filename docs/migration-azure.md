@@ -328,7 +328,7 @@ Secrets GitHub (noms seulement) :
 - `ACR_USERNAME`
 - `ACR_PASSWORD`
 
-Variables GitHub :
+Variables GitHub (optionnelles ; valeurs par défaut dans le workflow) :
 
 - `ACR_LOGIN_SERVER` = `aglcioverdueacr.azurecr.io`
 - `IMAGE_NAME` = `overdue-files`
