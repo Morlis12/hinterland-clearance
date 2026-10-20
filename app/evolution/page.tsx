@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { formatDateFR, InfoBanner, FilterBar } from "@/components/ui";
+import { appendFilters, emptyFilters, type Filters } from "@/src/lib/filters";
 
 const CATS: { key: string; label: string; color: string }[] = [
   { key: "total", label: "Total", color: "#6366f1" },
@@ -37,23 +38,12 @@ function pctStr(pct: number | null): string {
 
 type ComSortKey = "com" | "ancien" | "recent" | "variation" | "pct";
 
-type Filters = { agence: string; unite: string; com: string; categorie: string; q: string };
-const NO_FILTERS: Filters = { agence: "", unite: "", com: "", categorie: "", q: "" };
-
-function appendFilters(qs: URLSearchParams, f: Filters) {
-  if (f.agence) qs.set("agence", f.agence);
-  if (f.unite) qs.set("unite", f.unite);
-  if (f.com) qs.set("com", f.com);
-  if (f.categorie) qs.set("categorie", f.categorie);
-  if (f.q) qs.set("q", f.q);
-}
-
 export default function EvolutionPage() {
   const [data, setData] = useState<any>(null);
   const [n, setN] = useState("");
   const [n1, setN1] = useState("");
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [options, setOptions] = useState<{ agences: string[]; unites: string[]; coms: string[] }>({ agences: [], unites: [], coms: [] });
   const [comSort, setComSort] = useState<{ key: ComSortKey; dir: "asc" | "desc" }>({ key: "variation", dir: "desc" });
 

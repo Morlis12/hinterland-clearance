@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { MultiSelect } from "@/components/ui";
 
 const COLS: { key: string; label: string }[] = [
   { key: "com", label: "COM" },
@@ -26,9 +27,9 @@ export default function ComsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [agences, setAgences] = useState<string[]>([]);
   const [unites, setUnites] = useState<string[]>([]);
-  const [fAgence, setFAgence] = useState("");
-  const [fUnite, setFUnite] = useState("");
-  const [fCom, setFCom] = useState("");
+  const [fAgence, setFAgence] = useState<string[]>([]);
+  const [fUnite, setFUnite] = useState<string[]>([]);
+  const [fCom, setFCom] = useState<string[]>([]);
   const [fNom, setFNom] = useState("");
   const [dossierQ, setDossierQ] = useState("");
   const [sort, setSort] = useState("total");
@@ -52,9 +53,9 @@ export default function ComsPage() {
   const filtered = useMemo(() => {
     let out = rows.filter(
       (x) =>
-        (!fAgence || x.agence === fAgence) &&
-        (!fUnite || x.uniteCom === fUnite) &&
-        (!fCom || x.com === fCom) &&
+        (!fAgence.length || fAgence.includes(x.agence)) &&
+        (!fUnite.length || fUnite.includes(x.uniteCom)) &&
+        (!fCom.length || fCom.includes(x.com)) &&
         (!fNom || norm(x.com).includes(norm(fNom)) || norm(x.uniteCom).includes(norm(fNom)))
     );
     out = [...out].sort((a, b) => {
@@ -90,18 +91,12 @@ export default function ComsPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Analyse par COM</h1>
       <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
-        <label className="inline-flex items-center gap-2"><span className="text-slate-600 dark:text-slate-400">Agence :</span>
-          <select value={fAgence} onChange={(e) => setFAgence(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{agences.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-        </label>
-        <label className="inline-flex items-center gap-2"><span className="text-slate-600 dark:text-slate-400">Unité :</span>
-          <select value={fUnite} onChange={(e) => setFUnite(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Toutes</option>{unites.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-        </label>
-        <label className="inline-flex items-center gap-2"><span className="text-slate-600 dark:text-slate-400">COM :</span>
-          <select value={fCom} onChange={(e) => setFCom(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"><option value="">Tous</option>{coms.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-        </label>
+        <MultiSelect label="Agence" options={agences.map((a) => ({ value: a, label: a }))} values={fAgence} onChange={setFAgence} allLabel="Toutes" />
+        <MultiSelect label="Unité" options={unites.map((a) => ({ value: a, label: a }))} values={fUnite} onChange={setFUnite} allLabel="Toutes" />
+        <MultiSelect label="COM" options={coms.map((a) => ({ value: a, label: a }))} values={fCom} onChange={setFCom} allLabel="Tous" />
         <input value={fNom} onChange={(e) => setFNom(e.target.value)} placeholder="Nom (COM / unité)…" className="w-52 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-        {(fAgence || fUnite || fCom || fNom) && (
-          <button onClick={() => { setFAgence(""); setFUnite(""); setFCom(""); setFNom(""); }} className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Réinitialiser</button>
+        {(fAgence.length > 0 || fUnite.length > 0 || fCom.length > 0 || fNom) && (
+          <button onClick={() => { setFAgence([]); setFUnite([]); setFCom([]); setFNom(""); }} className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Réinitialiser</button>
         )}
         <span className="text-xs text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge (plus critique) → orange → vert (moins critique) selon le nombre de retards.</span>
       </div>

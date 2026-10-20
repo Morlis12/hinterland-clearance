@@ -16,10 +16,10 @@ export const CAT_COLUMNS: Record<string, string> = {
 
 export interface AggFilters {
   q?: string;
-  agence?: string;
-  unite?: string;
-  com?: string;
-  categorie?: string;
+  agence?: string[];
+  unite?: string[];
+  com?: string[];
+  categorie?: string[];
 }
 
 /** Clause WHERE (préfixée par AND) pour les agrégats de raw_dossier_details ; params numérotés à partir de p0. */
@@ -28,11 +28,12 @@ export function buildAggWhere(f: AggFilters, p0 = 2) {
   const all: string[] = [];
   const geo: string[] = [];
   let p = p0;
-  if (f.agence) { all.push(`agency_name=$${p}`); geo.push(`agency_name=$${p}`); params.push(f.agence); p++; }
-  if (f.unite) { all.push(`com_unit_name=$${p}`); geo.push(`com_unit_name=$${p}`); params.push(f.unite); p++; }
-  if (f.com) { all.push(`com_name=$${p}`); geo.push(`com_name=$${p}`); params.push(f.com); p++; }
+  if (f.agence?.length) { all.push(`agency_name = ANY($${p})`); geo.push(`agency_name = ANY($${p})`); params.push(f.agence); p++; }
+  if (f.unite?.length) { all.push(`com_unit_name = ANY($${p})`); geo.push(`com_unit_name = ANY($${p})`); params.push(f.unite); p++; }
+  if (f.com?.length) { all.push(`com_name = ANY($${p})`); geo.push(`com_name = ANY($${p})`); params.push(f.com); p++; }
   if (f.q) { all.push(`(dossier ILIKE $${p} OR com_name ILIKE $${p})`); params.push(`%${f.q}%`); p++; }
-  if (f.categorie && CAT_COLUMNS[f.categorie]) all.push(`${CAT_COLUMNS[f.categorie]}=1`);
+  const catCols = (f.categorie ?? []).map((c) => CAT_COLUMNS[c]).filter(Boolean);
+  if (catCols.length) all.push(`(${catCols.map((c) => `${c}=1`).join(" OR ")})`);
   return {
     all: all.length ? " AND " + all.join(" AND ") : "",
     geo: geo.length ? " AND " + geo.join(" AND ") : "",
@@ -146,10 +147,10 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
 
 export interface DossierFilters {
   q?: string;
-  agence?: string;
-  unite?: string;
-  com?: string;
-  categorie?: string;
+  agence?: string[];
+  unite?: string[];
+  com?: string[];
+  categorie?: string[];
   page?: number;
   pageSize?: number;
   sort?: string;
@@ -165,10 +166,11 @@ export async function queryDossiers(pool: Pool, importId: number, f: DossierFilt
   const params: unknown[] = [importId];
   let p = 2;
   if (f.q) { where.push(`(dossier ILIKE $${p} OR com_name ILIKE $${p})`); params.push(`%${f.q}%`); p++; }
-  if (f.agence) { where.push(`agency_name=$${p}`); params.push(f.agence); p++; }
-  if (f.unite) { where.push(`com_unit_name=$${p}`); params.push(f.unite); p++; }
-  if (f.com) { where.push(`com_name=$${p}`); params.push(f.com); p++; }
-  if (f.categorie && CAT_COLUMNS[f.categorie]) { where.push(`${CAT_COLUMNS[f.categorie]}=1`); p; }
+  if (f.agence?.length) { where.push(`agency_name = ANY($${p})`); params.push(f.agence); p++; }
+  if (f.unite?.length) { where.push(`com_unit_name = ANY($${p})`); params.push(f.unite); p++; }
+  if (f.com?.length) { where.push(`com_name = ANY($${p})`); params.push(f.com); p++; }
+  const catCols = (f.categorie ?? []).map((c) => CAT_COLUMNS[c]).filter(Boolean);
+  if (catCols.length) where.push(`(${catCols.map((c) => `${c}=1`).join(" OR ")})`);
   const sortKey = SORTABLE.has(f.sort ?? "") ? (f.sort as string) : "dossier";
   const sortCol =
     sortKey === "dossier" ? "dossier" : sortKey === "agence" ? "agency_name" :

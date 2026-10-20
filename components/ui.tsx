@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CATEGORIES } from "@/src/lib/import/constants";
 
 /** Date AAAA-MM-JJ -> jj/mm/aaaa (jamais d'ISO brut à l'écran). */
@@ -98,51 +98,146 @@ export function InfoBanner({
   );
 }
 
+export type MultiOption = { value: string; label: string };
+
+export function MultiSelect({
+  label, options, values, onChange, allLabel = "Tous", className = "",
+}: {
+  label: string;
+  options: MultiOption[];
+  values: string[];
+  onChange: (values: string[]) => void;
+  allLabel?: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = new Set(values);
+  const labels = values.map((v) => options.find((o) => o.value === v)?.label ?? v);
+  const summary =
+    values.length === 0 ? allLabel : values.length === 1 ? (labels[0] ?? values[0]) : `${values.length} sélectionnés`;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent | TouchEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("touchstart", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("touchstart", close);
+    };
+  }, [open]);
+
+  const toggle = (value: string) => {
+    onChange(selected.has(value) ? values.filter((v) => v !== value) : [...values, value]);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={`relative inline-flex items-center gap-2 ${className}`}
+      onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
+    >
+      <span className="text-slate-600 dark:text-slate-400">{label} :</span>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        title={values.length ? labels.join(", ") : allLabel}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex min-w-36 max-w-56 items-center justify-between gap-2 rounded border border-slate-300 bg-white px-2 py-1 text-left dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+      >
+        <span className={`truncate ${values.length ? "" : "text-slate-500 dark:text-slate-400"}`}>{summary}</span>
+        <span aria-hidden className="shrink-0 text-[10px]">▾</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="mb-1 flex items-center justify-between gap-2 border-b border-slate-100 pb-1 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-xs text-slate-600 underline hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+            >
+              Tout effacer
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(options.map((o) => o.value))}
+              className="text-xs text-slate-600 underline hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+            >
+              Tout sélectionner
+            </button>
+          </div>
+          <div className="max-h-64 overflow-auto">
+            {options.map((o) => (
+              <label
+                key={o.value}
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(o.value)}
+                  onChange={() => toggle(o.value)}
+                  className="accent-marine-800"
+                />
+                <span className="truncate">{o.label}</span>
+              </label>
+            ))}
+            {options.length === 0 && <div className="px-2 py-1 text-xs text-slate-500">Aucune option</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FilterBar({
   agences, unites, coms, fAgence, fUnite, fCom, fCategorie, fQ, onChange,
 }: {
   agences: string[];
   unites: string[];
   coms: string[];
-  fAgence: string;
-  fUnite: string;
-  fCom: string;
-  fCategorie: string;
+  fAgence: string[];
+  fUnite: string[];
+  fCom: string[];
+  fCategorie: string[];
   fQ: string;
-  onChange: (patch: { agence?: string; unite?: string; com?: string; categorie?: string; q?: string }) => void;
+  onChange: (patch: { agence?: string[]; unite?: string[]; com?: string[]; categorie?: string[]; q?: string }) => void;
 }) {
   const sel = "rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
-  const active = fAgence || fUnite || fCom || fCategorie || fQ;
+  const active = fAgence.length > 0 || fUnite.length > 0 || fCom.length > 0 || fCategorie.length > 0 || Boolean(fQ);
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
-      <label className="inline-flex items-center gap-2">
-        <span className="text-slate-600 dark:text-slate-400">Agence :</span>
-        <select value={fAgence} onChange={(e) => onChange({ agence: e.target.value })} className={sel}>
-          <option value="">Toutes</option>
-          {agences.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </label>
-      <label className="inline-flex items-center gap-2">
-        <span className="text-slate-600 dark:text-slate-400">Unité :</span>
-        <select value={fUnite} onChange={(e) => onChange({ unite: e.target.value })} className={sel}>
-          <option value="">Toutes</option>
-          {unites.map((u) => <option key={u} value={u}>{u}</option>)}
-        </select>
-      </label>
-      <label className="inline-flex items-center gap-2">
-        <span className="text-slate-600 dark:text-slate-400">COM :</span>
-        <select value={fCom} onChange={(e) => onChange({ com: e.target.value })} className={sel}>
-          <option value="">Tous</option>
-          {coms.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </label>
-      <label className="inline-flex items-center gap-2">
-        <span className="text-slate-600 dark:text-slate-400">Catégorie :</span>
-        <select value={fCategorie} onChange={(e) => onChange({ categorie: e.target.value })} className={sel}>
-          <option value="">Toutes</option>
-          {CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-        </select>
-      </label>
+      <MultiSelect
+        label="Agence"
+        options={agences.map((a) => ({ value: a, label: a }))}
+        values={fAgence}
+        onChange={(values) => onChange({ agence: values })}
+        allLabel="Toutes"
+      />
+      <MultiSelect
+        label="Unité"
+        options={unites.map((u) => ({ value: u, label: u }))}
+        values={fUnite}
+        onChange={(values) => onChange({ unite: values })}
+        allLabel="Toutes"
+      />
+      <MultiSelect
+        label="COM"
+        options={coms.map((c) => ({ value: c, label: c }))}
+        values={fCom}
+        onChange={(values) => onChange({ com: values })}
+        allLabel="Tous"
+      />
+      <MultiSelect
+        label="Catégorie"
+        options={CATEGORIES.map((c) => ({ value: c.key, label: c.label }))}
+        values={fCategorie}
+        onChange={(values) => onChange({ categorie: values })}
+        allLabel="Toutes"
+      />
       <input
         value={fQ}
         onChange={(e) => onChange({ q: e.target.value })}
@@ -151,7 +246,7 @@ export function FilterBar({
       />
       {active && (
         <button
-          onClick={() => onChange({ agence: "", unite: "", com: "", categorie: "", q: "" })}
+          onClick={() => onChange({ agence: [], unite: [], com: [], categorie: [], q: "" })}
           className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           Réinitialiser

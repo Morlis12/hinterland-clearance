@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/src/lib/db";
+import { parseMulti } from "@/src/lib/filters";
 import { dashboardKpis, latestSnapshotId, topComs, listSnapshots, filterOptions, type AggFilters } from "@/src/lib/stats";
 
 export const dynamic = "force-dynamic";
 
 function readFilters(url: URL): AggFilters {
   return {
-    agence: url.searchParams.get("agence") ?? undefined,
-    unite: url.searchParams.get("unite") ?? undefined,
-    com: url.searchParams.get("com") ?? undefined,
-    categorie: url.searchParams.get("categorie") ?? undefined,
+    agence: parseMulti(url.searchParams, "agence"),
+    unite: parseMulti(url.searchParams, "unite"),
+    com: parseMulti(url.searchParams, "com"),
+    categorie: parseMulti(url.searchParams, "categorie"),
     q: url.searchParams.get("q") ?? undefined,
   };
 }

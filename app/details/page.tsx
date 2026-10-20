@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { MultiSelect } from "@/components/ui";
 
 const CATS = [
   { key: "", label: "Toutes catégories" },
@@ -20,26 +21,26 @@ function DetailsInner() {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [com, setCom] = useState(params.get("com") ?? "");
-  const [categorie, setCategorie] = useState(params.get("categorie") ?? "");
+  const [categories, setCategories] = useState<string[]>(() => params.getAll("categorie").filter(Boolean));
   const [data, setData] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
 
   const load = useCallback(async (p = 1) => {
     setError("");
-    const qs = new URLSearchParams({
-      page: String(p), pageSize: "50",
-      ...(q ? { q } : {}), ...(com ? { com } : {}), ...(categorie ? { categorie } : {}),
-    });
+    const qs = new URLSearchParams({ page: String(p), pageSize: "50" });
+    if (q) qs.set("q", q);
+    if (com) qs.set("com", com);
+    for (const value of categories) qs.append("categorie", value);
     const snap = params.get("snapshot");
     if (snap) qs.set("snapshot", snap);
     const r = await fetch(`/api/dossiers?${qs}`);
     const j = await r.json();
     if (!r.ok) setError(j.error ?? "Erreur.");
     else { setData(j); setPage(j.page); }
-  }, [q, com, categorie, params]);
+  }, [q, com, categories, params]);
 
-  useEffect(() => { load(1); }, [categorie, params]);
+  useEffect(() => { load(1); }, [categories, params]);
 
   return (
     <div className="space-y-4">
@@ -47,11 +48,15 @@ function DetailsInner() {
       <div className="flex flex-wrap gap-2 text-sm">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Recherche dossier ou COM…" className="rounded border border-slate-300 bg-white px-2 py-1 w-64 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
         <input value={com} onChange={(e) => setCom(e.target.value)} placeholder="COM exact…" className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-        <select value={categorie} onChange={(e) => setCategorie(e.target.value)} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-          {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-        </select>
+        <MultiSelect
+          label="Catégorie"
+          options={CATS.filter((c) => c.key).map((c) => ({ value: c.key, label: c.label }))}
+          values={categories}
+          onChange={setCategories}
+          allLabel="Toutes"
+        />
         <button onClick={() => load(1)} className="rounded bg-marine-800 px-3 py-1 text-white dark:bg-gold-300 dark:text-marine-900 dark:hover:bg-gold-400">Filtrer</button>
-        {(q || com || categorie) && <span className="text-xs text-slate-500 self-center dark:text-slate-400">Filtres actifs depuis le tableau de bord via l&apos;URL.</span>}
+        {(q || com || categories.length > 0) && <span className="text-xs text-slate-500 self-center dark:text-slate-400">Filtres actifs depuis le tableau de bord via l&apos;URL.</span>}
       </div>
       {error && <div className="rounded bg-white p-4 text-sm text-red-600 dark:bg-slate-900 dark:text-red-400">{error}</div>}
       {data && (

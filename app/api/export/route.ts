@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/src/lib/db";
+import { parseMulti } from "@/src/lib/filters";
 import { config } from "@/src/lib/env";
 import { queryDossiers, latestSnapshotId } from "@/src/lib/stats";
 
@@ -17,10 +18,10 @@ export async function GET(req: Request) {
   const max = config.exportMaxRows;
   const data = await queryDossiers(pool, importId, {
     q: url.searchParams.get("q") ?? undefined,
-    agence: url.searchParams.get("agence") ?? undefined,
-    unite: url.searchParams.get("unite") ?? undefined,
-    com: url.searchParams.get("com") ?? undefined,
-    categorie: url.searchParams.get("categorie") ?? undefined,
+    agence: parseMulti(url.searchParams, "agence"),
+    unite: parseMulti(url.searchParams, "unite"),
+    com: parseMulti(url.searchParams, "com"),
+    categorie: parseMulti(url.searchParams, "categorie"),
     page: 1, pageSize: max, sort: "dossier", dir: "asc",
   });
   if (data.total > max) {

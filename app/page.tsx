@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { KpiCard, SnapshotSelector, Legend, FilterBar } from "@/components/ui";
+import { appendFilters, emptyFilters, type Filters } from "@/src/lib/filters";
 
 const CATS: { key: string; label: string }[] = [
   { key: "bae", label: "BAE" },
@@ -19,15 +20,12 @@ const CATS: { key: string; label: string }[] = [
   { key: "debours", label: "Avec débours" },
 ];
 
-type Filters = { agence: string; unite: string; com: string; categorie: string; q: string };
-const NO_FILTERS: Filters = { agence: "", unite: "", com: "", categorie: "", q: "" };
-
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [snapshot, setSnapshot] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [options, setOptions] = useState<{ agences: string[]; unites: string[]; coms: string[] }>({ agences: [], unites: [], coms: [] });
 
   const load = async (f: Filters, id?: number | null) => {
@@ -35,11 +33,7 @@ export default function DashboardPage() {
     const qs = new URLSearchParams();
     const useId = id === undefined ? snapshot : id;
     if (useId) qs.set("snapshot", String(useId));
-    if (f.agence) qs.set("agence", f.agence);
-    if (f.unite) qs.set("unite", f.unite);
-    if (f.com) qs.set("com", f.com);
-    if (f.categorie) qs.set("categorie", f.categorie);
-    if (f.q) qs.set("q", f.q);
+    appendFilters(qs, f);
     qs.set("limit", "200");
     const r = await fetch(`/api/dashboard?${qs}`);
     const j = await r.json();
@@ -51,7 +45,7 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => { load(NO_FILTERS, null); }, []);
+  useEffect(() => { load(emptyFilters(), null); }, []);
 
   const onFilter = (patch: Partial<Filters>) => {
     const next = { ...filters, ...patch };
