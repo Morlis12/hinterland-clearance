@@ -54,7 +54,8 @@ project. A copy-paste prompt is in `references/prompt.md`; workflow templates ar
 | Constraint | Track | Auth | RBAC |
 |---|---|---|---|
 | Contributor only, no role assignments | App Service code/zip or Web App for Containers | Publish profile + ACR admin | None |
-| True container, Contributor only | Web App for Containers | Publish profile + ACR admin | None |
+| True container, Contributor only, manual deploy accepted | Azure Container Apps | ACR admin (GitHub build/push) + manual `az containerapp update` | None |
+| True container, simple automated deploy | Web App for Containers | Publish profile + ACR admin | None |
 | Secure production | App Service/ACA + OIDC + UAMI | Federated GitHub OIDC | Owner/UAA for AcrPull + Contributor app |
 | No registry needed | App Service code/zip | Publish profile | None |
 | Image-only pipeline | ACR build/push | ACR admin or OIDC AcrPush | Per auth choice |
@@ -74,8 +75,11 @@ Use `docker build` + `docker push` with `AcrPush`, or add a scoped custom role.
   `SCM_DO_BUILD_DURING_DEPLOYMENT=false`.
 - **Web App for Containers**: `WEBSITES_PORT` matching the container port; registry
   settings; always-on; health check.
-- **ACA**: external ingress, target port, liveness/readiness probes, secrets via
-  `secretref`, UAMI + AcrPull, min/max replicas.
+- **ACA**: dedicated environment + Log Analytics, external ingress, target port,
+  startup/readiness/liveness probes, secrets via `secretref`, min/max replicas. With ACR
+  admin, use a registry secret; with OIDC, UAMI + AcrPull. Without role assignments,
+  build/push in GitHub Actions and run `az containerapp update` manually. ACA does not
+  auto-pull `latest`: use immutable tags.
 
 ## Stop conditions
 
@@ -105,4 +109,5 @@ Stop and ask if:
 - `references/workflows/deploy-webapp-container.yml` — Web App for Containers + publish profile.
 - `references/workflows/deploy-appservice-code.yml` — App Service code/zip.
 - `references/workflows/deploy-aca-oidc.yml` — ACA + OIDC + UAMI.
+- `references/workflows/build-image.yml` — build/push ACR only + manual ACA update.
 - `references/workflows/acr-build.yml` — build/push image only.

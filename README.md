@@ -145,9 +145,12 @@ de lignes réelles** — compatible avec une base managée modeste ; au-delà, p
   région proche), `APP_PASSWORD`, `APP_SESSION_SECRET`. Aucune écriture disque, aucun état
   en mémoire, fonctions courtes uniquement (le gros import reste en CLI). Santé :
   `/api/health` (liveness, public), `/api/ready` (teste la base, public).
-- **Azure** : Web App for Containers (App Service Linux B1) + Azure Container Registry +
-  PostgreSQL Flexible Server ; image taguée par commit, déploiement via publish profile.
-  Voir `docs/migration-azure.md`. Aucune dépendance Vercel dans la logique métier.
+- **Azure** : Azure Container Apps (environnement dédié + Log Analytics) + Azure Container
+  Registry + PostgreSQL Flexible Server ; image taguée par commit, build/push via
+  `.github/workflows/build-image.yml`, mise à jour manuelle de la révision ACA.
+  Instance : https://aglci-overdue.niceriver-3ee36e6e.westeurope.azurecontainerapps.io
+  Voir `docs/migration-azure.md`. L'App Service `aglci-overdue` (même nom) est arrêté et
+  conservé 24–48 h en rollback. Aucune dépendance Vercel dans la logique métier.
 
 ## Sécurité
 

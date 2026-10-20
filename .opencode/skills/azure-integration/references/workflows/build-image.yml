@@ -1,0 +1,63 @@
+# Modèle — build/push ACR uniquement, déploiement ACA manuel.
+# Secrets GitHub : ACR_USERNAME, ACR_PASSWORD.
+# Variables GitHub : ACR_LOGIN_SERVER, IMAGE_NAME.
+# Après le run :
+#   az containerapp update -g "<RG>" -n "<APP>" \
+#     --image "<ACR_LOGIN_SERVER>/<IMAGE_NAME>:<SHA>" \
+#     --revision-suffix "<SHA_COURT>"
+
+name: Build and push image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+      - name: Validate ACR configuration
+        run: |
+          test -n "$ACR_LOGIN_SERVER" || { echo "Variable ACR_LOGIN_SERVER manquante"; exit 1; }
+          test -n "$IMAGE_NAME" || { echo "Variable IMAGE_NAME manquante"; exit 1; }
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

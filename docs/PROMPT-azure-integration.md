@@ -16,7 +16,8 @@ Tu es mon assistant DevOps. Intègre `<PROJET>` sur Azure en suivant le playbook
 - URL souhaitée : `<https://...>`
 - Domaine métier : `<...>`
 - Hébergement souhaité : `<App Service code/zip | Web App for Containers | Azure Container Apps>`
-- Auth CI/CD souhaitée : `<publish profile + ACR admin | OIDC + UAMI | à décider>`
+- Auth CI/CD souhaitée : `<publish profile + ACR admin | build/push ACR + mise à jour ACA
+  manuelle | OIDC + UAMI | à décider>`
 - Base : `<PostgreSQL Flexible Server | existante | autre>`
 - Health / readiness : `<chemins>`
 - Migration DB : `<commande manuelle | au démarrage | job dédié>`
