@@ -120,17 +120,18 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
        FROM raw_com_summary WHERE import_id=$1 AND is_subtotal=false${w.geo} GROUP BY 1,2,3
      ),
      ret AS (
-       SELECT com_name, COUNT(*)::int AS total,
+       SELECT com_name, com_unit_name, agency_name, COUNT(*)::int AS total,
         COALESCE(SUM(bae),0)::int AS bae, COALESCE(SUM(fact_douane),0)::int AS "factDouane",
         COALESCE(SUM(mise_en_livraison),0)::int AS "miseEnLivraison", COALESCE(SUM(livraison),0)::int AS livraison,
         COALESCE(SUM(retour_conteneur),0)::int AS "retourConteneur",
         COALESCE(SUM(declares_non_factures),0)::int AS "declaresNonFactures",
         COALESCE(SUM(fact_prestation),0)::int AS "factPrestation", COALESCE(SUM(archivage),0)::int AS archivage,
         COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours
-       FROM raw_dossier_details WHERE import_id=$1${w.all} GROUP BY 1
+       FROM raw_dossier_details WHERE import_id=$1${w.all} GROUP BY 1,2,3
      )
      SELECT COALESCE(ret.com_name, val.com_name) AS com,
-       COALESCE(val.com_unit_name,'') AS "uniteCom", COALESCE(val.agency_name,'') AS agence,
+       COALESCE(val.com_unit_name, ret.com_unit_name, '') AS "uniteCom",
+       COALESCE(val.agency_name, ret.agency_name, '') AS agence,
        val.valides AS "dossiersValides",
        COALESCE(ret.total,0) AS total, COALESCE(ret.bae,0) AS bae,
        COALESCE(ret."factDouane",0) AS "factDouane", COALESCE(ret."miseEnLivraison",0) AS "miseEnLivraison",
@@ -138,8 +139,11 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
        COALESCE(ret."declaresNonFactures",0) AS "declaresNonFactures",
        COALESCE(ret."factPrestation",0) AS "factPrestation", COALESCE(ret.archivage,0) AS archivage,
        COALESCE(ret."sansDeclaration",0) AS "sansDeclaration", COALESCE(ret.debours,0) AS debours
-     FROM ret FULL OUTER JOIN val ON ret.com_name = val.com_name
-      ORDER BY total DESC`,
+     FROM ret FULL OUTER JOIN val
+       ON ret.com_name IS NOT DISTINCT FROM val.com_name
+      AND ret.com_unit_name IS NOT DISTINCT FROM val.com_unit_name
+      AND ret.agency_name IS NOT DISTINCT FROM val.agency_name
+      ORDER BY total DESC, com`,
     [importId, ...w.params]
   );
   return r.rows;
@@ -153,6 +157,7 @@ export interface DossierFilters {
   categorie?: string[];
   page?: number;
   pageSize?: number;
+  maxPageSize?: number;
   sort?: string;
   dir?: "asc" | "desc";
 }
@@ -161,7 +166,8 @@ const SORTABLE = new Set(["dossier", "agence", "com", "unite", "categorie", "id"
 
 export async function queryDossiers(pool: Pool, importId: number, f: DossierFilters) {
   const page = Math.max(1, Number(f.page ?? 1));
-  const pageSize = Math.min(200, Math.max(5, Number(f.pageSize ?? 50)));
+  const maxPageSize = Math.max(5, Number(f.maxPageSize ?? 200));
+  const pageSize = Math.min(maxPageSize, Math.max(5, Number(f.pageSize ?? 50)));
   const where: string[] = [`import_id=$1`];
   const params: unknown[] = [importId];
   let p = 2;

@@ -15,7 +15,8 @@
     "import": "tsx scripts/import.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "seed:demo-snapshot": "tsx scripts/seed-demo-snapshot.ts",
-    "seed:demo-clean": "tsx scripts/seed-demo-clean.ts"
+    "seed:demo-clean": "tsx scripts/seed-demo-clean.ts",
+    "audit:com-matrix": "tsx scripts/audit-com-matrix.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.4",

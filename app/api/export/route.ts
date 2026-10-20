@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     unite: parseMulti(url.searchParams, "unite"),
     com: parseMulti(url.searchParams, "com"),
     categorie: parseMulti(url.searchParams, "categorie"),
-    page: 1, pageSize: max, sort: "dossier", dir: "asc",
+    page: 1, pageSize: max, maxPageSize: max, sort: "dossier", dir: "asc",
   });
   if (data.total > max) {
     return NextResponse.json(
