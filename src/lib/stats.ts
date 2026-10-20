@@ -132,7 +132,7 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
      SELECT COALESCE(ret.com_name, val.com_name) AS com,
        COALESCE(val.com_unit_name, ret.com_unit_name, '') AS "uniteCom",
        COALESCE(val.agency_name, ret.agency_name, '') AS agence,
-       val.valides AS "dossiersValides",
+       MAX(val.valides) AS "dossiersValides",
        COALESCE(ret.total,0) AS total, COALESCE(ret.bae,0) AS bae,
        COALESCE(ret."factDouane",0) AS "factDouane", COALESCE(ret."miseEnLivraison",0) AS "miseEnLivraison",
        COALESCE(ret.livraison,0) AS livraison, COALESCE(ret."retourConteneur",0) AS "retourConteneur",
