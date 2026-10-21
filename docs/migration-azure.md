@@ -126,7 +126,8 @@ Séquences :
    - `raw_com_summary` = 70 ; `raw_unarchived` = 0 ;
    - sommes par catégorie identiques à la source ;
    - séquences `SERIAL` alignées sur `MAX(id)` ;
-   - `/api/ready` retourne `imports: 2`.
+   - `/api/ready` retourne `imports: 2` avec une session valide (sans session : seulement
+     `{"status":"ok"}`).
 6. Supprimer la règle firewall temporaire et le fichier de dump.
 
 ### Résultat constaté le 2026-10-19
@@ -251,6 +252,10 @@ volée, puis vérifier `az containerapp revision list`.
 
 - `GET /api/health` → 200 `{"status":"ok","service":"agl-overdue-files"}`.
 - `GET /api/ready` → 200 `{"status":"ready","db":"ok","imports":2}`.
+- Depuis la PR #1 : ces deux routes sont publiques mais ne renvoient plus de données.
+  `/api/health` → 200 `{"status":"ok"}` (rendue à chaque requête, plus de cache statique) ;
+  `/api/ready` → 200 `{"status":"ok"}` sans session, ou 503 `{"status":"non prêt"}` ;
+  avec le cookie de session, elle ajoute `db` et `imports`.
 - Login avec `APP_PASSWORD` sans guillemets → 200.
 - `/api/dashboard` sans cookie → 401.
 - Dashboard : snapshot 2, **19 593** dossiers, évolution **20 566 → 19 593**.
@@ -302,7 +307,7 @@ COMMIT;
 
 Après nettoyage : `imports=2`, `raw_dossier_details=40 159`, `raw_com_summary=70`,
 `raw_unarchived=0`, `agencies=3`, `com_units=30`, `coms=35` ; sommes identiques ;
-`/api/ready` → `imports:2` ; dashboard → 19 593 ; snapshots → 2.
+`/api/ready` (avec session) → `imports:2` ; dashboard → 19 593 ; snapshots → 2.
 
 ## 7. CI/CD (P4)
 
