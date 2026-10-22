@@ -18,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AppShell>{children}</AppShell>
+        <div aria-hidden className="pointer-events-none fixed bottom-1.5 right-3 z-40 text-[11px] tracking-wide text-slate-500/80 dark:text-slate-400/80">made by KPD</div>
       </body>
     </html>
   );

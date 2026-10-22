@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { formatDateFR, InfoBanner, FilterBar } from "@/components/ui";
+import { formatDateFR, formatDateTimeFR, InfoBanner, FilterBar } from "@/components/ui";
+import SnapshotBanner from "@/components/SnapshotBanner";
 import { appendFilters, emptyFilters, type Filters } from "@/src/lib/filters";
 
 const CATS: { key: string; label: string; color: string }[] = [
@@ -145,6 +146,7 @@ export default function EvolutionPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Évolution</h1>
+      <SnapshotBanner snapshotId={Number(n) || null} previousId={Number(n1) || null} />
       <div className="flex flex-wrap gap-3 text-sm">
         <label>Extraction précédente (N-1) : <select value={n1} onChange={(e) => { setN1(e.target.value); load(e.target.value, n); }} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
           {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{formatDateFR(s.extraction_date)} — {s.file_name}</option>)}
@@ -246,6 +248,8 @@ function TrendChart({ snapshots, params }: { snapshots: any[]; params: string })
         const k = r.kpis ?? {};
         const row: any = {
           date: formatDateFR(s.extraction_date),
+          loaded: formatDateTimeFR(s.loaded_at),
+          file: s.file_name,
           total: Number(k.totalAvecRetard ?? k.total ?? 0),
         };
         for (const c of CATS.slice(1)) row[c.key] = Number(k[c.key] ?? 0);
@@ -289,7 +293,7 @@ function TrendChart({ snapshots, params }: { snapshots: any[]; params: string })
             <LineChart data={series}>
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis />
-              <Tooltip />
+              <Tooltip content={<EvoTip />} />
               {active.map((c) => (
                 <Line key={c.key} type="monotone" dataKey={c.key} name={c.label} stroke={c.color} strokeWidth={2} dot={{ r: 2 }} />
               ))}
@@ -298,6 +302,19 @@ function TrendChart({ snapshots, params }: { snapshots: any[]; params: string })
         )}
       </div>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Cliquez sur une catégorie ci-dessus pour l&apos;afficher ou la masquer.</p>
+    </div>
+  );
+}
+
+function EvoTip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div className="rounded border border-slate-200 bg-white p-2 text-xs shadow dark:border-slate-700 dark:bg-slate-900">
+      <div className="font-semibold">Extraction du {p.date}</div>
+      {payload.map((x: any) => <div key={x.dataKey} style={{ color: x.stroke }}>{x.name} : {Number(x.value).toLocaleString("fr-FR")}</div>)}
+      <div className="text-slate-500">Chargé le {p.loaded}</div>
+      <div className="text-slate-500">{p.file}</div>
     </div>
   );
 }

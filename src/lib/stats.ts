@@ -216,3 +216,19 @@ export async function evolutionCompare(pool: Pool, idA: number, idB: number, f: 
   );
   return { ancien: a.rows[0], recent: b.rows[0], parCom: byCom.rows };
 }
+
+/** Évolution de tous les KPI sur l'ensemble des extractions A (dates d'extraction et de chargement incluses). */
+export async function trendsAll(pool: Pool, f: AggFilters = {}) {
+  const w = buildAggWhere(f, 1);
+  const catSums = CATEGORIES.map((c) => `COALESCE(SUM(d.${CAT_COLUMNS[c.key]}),0)::int AS "${c.key}"`).join(", ");
+  const r = await pool.query(
+    `SELECT i.id, i.file_name, i.extraction_date, i.loaded_at, i.origin,
+       COUNT(d.*)::int AS total, COUNT(d.*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums}
+     FROM imports i
+     LEFT JOIN raw_dossier_details d ON d.import_id = i.id${w.all.replace(/agency_name|com_unit_name|com_name|dossier|bae|fact_douane|mise_en_livraison|livraison|retour_conteneur|declares_non_factures|fact_prestation|archivage|sans_declaration|debours/g, (m) => `d.${m}`)}
+     WHERE i.file_type='A' AND i.status IN ('success','warnings')
+     GROUP BY i.id ORDER BY i.extraction_date ASC, i.id ASC`,
+    w.params
+  );
+  return r.rows;
+}

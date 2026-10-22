@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MultiSelect } from "@/components/ui";
+import SnapshotBanner from "@/components/SnapshotBanner";
 
 const COLS: { key: string; label: string }[] = [
   { key: "com", label: "COM" },
@@ -90,6 +91,7 @@ export default function ComsPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Analyse par COM</h1>
+      <SnapshotBanner />
       <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
         <MultiSelect label="Agence" options={agences.map((a) => ({ value: a, label: a }))} values={fAgence} onChange={setFAgence} allLabel="Toutes" />
         <MultiSelect label="Unité" options={unites.map((a) => ({ value: a, label: a }))} values={fUnite} onChange={setFUnite} allLabel="Toutes" />

@@ -119,6 +119,14 @@ Maritime & Route locale 10 j · Maritime Hinterland 15 j. L'application ne recal
 Design : fond clair, bleu marine, rouge dégradations (hausse), vert améliorations (baisse),
 gris stable, sidebar fixe repliable sur mobile.
 
+## Interactivité et dates (v2)
+
+- **Cartes et barres cliquables** : un clic sur une carte KPI, une barre de catégorie ou une barre de COM ouvre un panneau latéral (`components/DrillPanel.tsx`) : chiffre et variation, comment il est obtenu, évolution dans le temps (clic sur un point = bascule vers cette extraction), 10 COM les plus concernés (clic = fiche du COM), liste des dossiers, étape utile.
+- **Courbes dans les cartes** (évolution sur toutes les extractions) via `GET /api/trends` (accepte les mêmes filtres que le tableau de bord).
+- **Dates partout** : bandeau `SnapshotBanner` sur chaque page (extraction = date du fichier SPOT, chargement = jour et heure du dépôt dans l'application, extraction précédente comparée), sélecteur d'extraction avec date de chargement, colonnes « Extraction » et « Chargé le » dans le détail et dans l'export CSV, infobulles des tendances. Heures en UTC = heure de Côte d'Ivoire.
+- **Aide « i »** sur chaque carte et graphique (`components/Help.tsx`) : c'est quoi, comment le lire, à retenir, précaution. Les textes décrivent la méthode, jamais des chiffres.
+- Signature « made by KPD » en bas à droite de chaque page (`app/layout.tsx`).
+
 ## Modèle de données (3 couches, PostgreSQL + Drizzle)
 
 1. **Brutes** : `raw_com_summary` (résumé COM + sous-totaux `is_subtotal`), `raw_dossier_details`
