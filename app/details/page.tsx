@@ -1,7 +1,8 @@
 "use client";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MultiSelect } from "@/components/ui";
+import { MultiSelect, formatDateFR, formatDateTimeFR } from "@/components/ui";
+import SnapshotBanner from "@/components/SnapshotBanner";
 
 const CATS = [
   { key: "", label: "Toutes catégories" },
@@ -25,6 +26,8 @@ function DetailsInner() {
   const [data, setData] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+  const [snapMeta, setSnapMeta] = useState<{ id: number; extraction_date: string; loaded_at: string }[]>([]);
+  useEffect(() => { fetch("/api/snapshots").then((r) => r.json()).then((j) => setSnapMeta(j.snapshots ?? [])).catch(() => {}); }, []);
 
   const load = useCallback(async (p = 1) => {
     setError("");
@@ -42,9 +45,11 @@ function DetailsInner() {
 
   useEffect(() => { load(1); }, [categories, params]);
 
+  const snap = snapMeta.find((s) => s.id === (data?.importId ?? Number(params.get("snapshot"))));
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Détail des dossiers</h1>
+      <SnapshotBanner snapshotId={data?.importId ?? (params.get("snapshot") ? Number(params.get("snapshot")) : null)} />
       <div className="flex flex-wrap gap-2 text-sm">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Recherche dossier ou COM…" className="rounded border border-slate-300 bg-white px-2 py-1 w-64 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
         <input value={com} onChange={(e) => setCom(e.target.value)} placeholder="COM exact…" className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -65,11 +70,13 @@ function DetailsInner() {
           <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-slate-900 dark:shadow-none">
             <table className="min-w-full text-xs">
               <thead><tr className="bg-marine-900 text-white dark:bg-slate-800">
-                {["Dossier", "Agence", "Unité", "COM", "BAE", "Douane", "Mise livr.", "Livraison", "Retour", "Décl.n.fact", "Fact.prest.", "Archiv.", "Sans décl.", "Débours"].map((h) => <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>)}
+                {["Extraction", "Chargé le", "Dossier", "Agence", "Unité", "COM", "BAE", "Douane", "Mise livr.", "Livraison", "Retour", "Décl.n.fact", "Fact.prest.", "Archiv.", "Sans décl.", "Débours"].map((h) => <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>)}
               </tr></thead>
               <tbody>
                 {data.rows.map((r: any, i: number) => (
                   <tr key={i} className="border-t hover:bg-blue-50 dark:border-slate-800 dark:hover:bg-slate-800">
+                    <td className="px-2 py-1 whitespace-nowrap text-slate-600 dark:text-slate-400">{snap ? formatDateFR(snap.extraction_date) : ""}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-slate-600 dark:text-slate-400">{snap ? formatDateTimeFR(snap.loaded_at) : ""}</td>
                     <td className="px-2 py-1 font-mono">{r.dossier}</td>
                     <td className="px-2 py-1">{r.agence}</td>
                     <td className="px-2 py-1">{r.unite}</td>

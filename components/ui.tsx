@@ -8,14 +8,39 @@ export function formatDateFR(iso: string | null | undefined): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso ?? "");
 }
 
+/** Horodatage ISO -> jj/mm/aaaa à hh:mm (heure de Côte d'Ivoire = UTC). */
+export function formatDateTimeFR(iso: string | Date | null | undefined): string {
+  const d = iso instanceof Date ? iso : new Date(String(iso ?? ""));
+  if (Number.isNaN(d.getTime())) return String(iso ?? "");
+  const date = d.toLocaleDateString("fr-FR", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
+  const time = d.toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+  return `${date} à ${time}`;
+}
+
+function Spark({ values }: { values: number[] }) {
+  if (values.length < 2) return null;
+  const w = 110, h = 26, lo = Math.min(...values), hi = Math.max(...values), span = hi - lo || 1;
+  const pts = values.map((v, i) => [4 + (i / (values.length - 1)) * (w - 8), h - 4 - ((v - lo) / span) * (h - 9)]);
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="mt-1">
+      <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" className="text-marine-700 dark:text-gold-300" />
+      <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="3.5" className="fill-gold-500" />
+    </svg>
+  );
+}
+
 export function KpiCard({
-  label, value, href, accent, previousValue,
+  label, value, href, accent, previousValue, onOpen, spark, help, dateLabel,
 }: {
   label: string;
   value: number | string;
   href?: string;
   accent?: string;
   previousValue?: number;
+  onOpen?: () => void;
+  spark?: number[];
+  help?: ReactNode;
+  dateLabel?: string;
 }) {
   const cur = Number(value);
   const noPrev = previousValue === undefined;
@@ -34,23 +59,46 @@ export function KpiCard({
 
   const inner = (
     <div className={`flex h-full flex-col rounded-lg bg-white p-4 shadow-sm border-l-4 dark:bg-slate-900 dark:shadow-none ${accent ?? "border-marine-800 dark:border-gold-300"}`}>
-      <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</div>
+        {help}
+      </div>
       <div className="my-1 text-2xl font-extrabold text-marine-900 dark:text-white">{cur.toLocaleString("fr-FR")}</div>
-      <div className={`mt-auto text-xs font-semibold ${cls}`} title="Variation vs extraction précédente">
+      {spark && <Spark values={spark} />}
+      <div className={`mt-auto pt-1 text-xs font-semibold ${cls}`} title="Variation vs extraction précédente">
         {noPrev ? "Pas de comparaison" : `${arrow} ${diffStr}${pctStr ? ` (${pctStr})` : ""}`}
       </div>
+      {(dateLabel || onOpen) && (
+        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+          <span>{dateLabel}</span>
+          {onOpen && <span className="font-semibold text-gold-500">Voir le détail ›</span>}
+        </div>
+      )}
     </div>
   );
+  if (onOpen) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+        className="block h-full cursor-pointer rounded-lg transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+      >
+        {inner}
+      </div>
+    );
+  }
   if (href) return <a href={href} className="block h-full hover:shadow-md transition-shadow">{inner}</a>;
   return inner;
 }
 
 export function SnapshotSelector({
   snapshots, value, onChange,
-}: { snapshots: { id: number; extraction_date: string; file_name: string }[]; value: number | null; onChange: (id: number) => void }) {
+}: { snapshots: { id: number; extraction_date: string; loaded_at?: string; file_name: string }[]; value: number | null; onChange: (id: number) => void }) {
   return (
     <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-slate-600 dark:text-slate-400">Extraction :</span>
+      <span className="text-slate-600 dark:text-slate-400">Extraction du :</span>
       <select
         value={value ?? ""}
         onChange={(e) => onChange(Number(e.target.value))}
@@ -58,7 +106,7 @@ export function SnapshotSelector({
       >
         {snapshots.map((s) => (
           <option key={s.id} value={s.id}>
-            {formatDateFR(s.extraction_date)} — {s.file_name}
+            {formatDateFR(s.extraction_date)}{s.loaded_at ? ` · chargé le ${formatDateFR(s.loaded_at)}` : ""} — {s.file_name}
           </option>
         ))}
       </select>

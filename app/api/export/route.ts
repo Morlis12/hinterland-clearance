@@ -30,9 +30,12 @@ export async function GET(req: Request) {
       { status: 413 }
     );
   }
-  const header = "dossier;agence;unite_com;com;bae;facturation_douane;mise_en_livraison;livraison;retour_conteneur;declares_non_factures;facturation_prestation;archivage;sans_declaration;avec_debours";
+  const meta = (await pool.query(`SELECT extraction_date, loaded_at FROM imports WHERE id=$1`, [importId])).rows[0];
+  const dExtr = meta ? String(new Date(meta.extraction_date).toISOString().slice(0, 10)).split("-").reverse().join("/") : "";
+  const dLoad = meta ? new Date(meta.loaded_at).toLocaleString("fr-FR", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  const header = "date_extraction;date_chargement;dossier;agence;unite_com;com;bae;facturation_douane;mise_en_livraison;livraison;retour_conteneur;declares_non_factures;facturation_prestation;archivage;sans_declaration;avec_debours";
   const lines = data.rows.map((r: Record<string, unknown>) =>
-    [r.dossier, r.agence, r.unite, r.com, r.bae, r.factDouane, r.miseEnLivraison, r.livraison, r.retourConteneur, r.declaresNonFactures, r.factPrestation, r.archivage, r.sansDeclaration, r.debours]
+    [dExtr, dLoad, r.dossier, r.agence, r.unite, r.com, r.bae, r.factDouane, r.miseEnLivraison, r.livraison, r.retourConteneur, r.declaresNonFactures, r.factPrestation, r.archivage, r.sansDeclaration, r.debours]
       .map((v) => String(v ?? "").replace(/;/g, ",")).join(";")
   );
   const csv = "\uFEFF" + header + "\n" + lines.join("\n");
