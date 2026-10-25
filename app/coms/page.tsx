@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MultiSelect } from "@/components/ui";
 import SnapshotBanner from "@/components/SnapshotBanner";
+import PageHeader from "@/components/PageHeader";
 
 const COLS: { key: string; label: string }[] = [
   { key: "com", label: "COM" },
@@ -86,26 +87,26 @@ export default function ComsPage() {
     else { setSort(key); setDir("desc"); }
   };
 
-  if (error) return <div className="rounded bg-white p-6 text-red-600 dark:bg-slate-900 dark:text-red-400">{error}</div>;
+  if (error) return <div className="rounded-2xl border border-line bg-panel p-6 text-bad">{error}</div>;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Analyse par COM</h1>
+      <PageHeader eyebrow="Overdue / Analyse" title="Analyse par COM" subtitle="Charge de retard de chaque COM, par agence et par unité." />
       <SnapshotBanner />
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-panel p-3 text-sm shadow-sm">
         <MultiSelect label="Agence" options={agences.map((a) => ({ value: a, label: a }))} values={fAgence} onChange={setFAgence} allLabel="Toutes" />
         <MultiSelect label="Unité" options={unites.map((a) => ({ value: a, label: a }))} values={fUnite} onChange={setFUnite} allLabel="Toutes" />
         <MultiSelect label="COM" options={coms.map((a) => ({ value: a, label: a }))} values={fCom} onChange={setFCom} allLabel="Tous" />
-        <input value={fNom} onChange={(e) => setFNom(e.target.value)} placeholder="Nom (COM / unité)…" className="w-52 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+        <input value={fNom} onChange={(e) => setFNom(e.target.value)} placeholder="Nom (COM / unité)…" className="w-52 rounded-lg border border-line bg-panel px-2 py-1" />
         {(fAgence.length > 0 || fUnite.length > 0 || fCom.length > 0 || fNom) && (
-          <button onClick={() => { setFAgence([]); setFUnite([]); setFCom([]); setFNom(""); }} className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Réinitialiser</button>
+          <button onClick={() => { setFAgence([]); setFUnite([]); setFCom([]); setFNom(""); }} className="rounded border border-line px-3 py-1 text-xs hover:bg-panel2">Réinitialiser</button>
         )}
-        <span className="text-xs text-slate-500 dark:text-slate-400">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge (plus critique) → orange → vert (moins critique) selon le nombre de retards.</span>
+        <span className="text-xs text-mut">{filtered.length} COM affichés. Taux = retards / dossiers validés 12 mois (si disponible). Colonne Total : rouge (plus critique) → orange → vert (moins critique) selon le nombre de retards.</span>
       </div>
-      <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-panel shadow-sm">
         <table className="min-w-full text-xs">
           <thead>
-            <tr className="bg-marine-900 text-white dark:bg-slate-800">
+            <tr className="bg-th text-th-ink">
               {COLS.map((c) => (
                 <th key={c.key} onClick={() => toggleSort(c.key)} className="cursor-pointer whitespace-nowrap px-2 py-2 text-left hover:underline">
                   {c.label}{sort === c.key ? (dir === "asc" ? " ▲" : " ▼") : ""}
@@ -117,7 +118,7 @@ export default function ComsPage() {
             {filtered.map((x, i) => {
               const t = Number(x.total) || 0;
               return (
-                <tr key={i} className="border-t hover:bg-blue-50 cursor-pointer dark:border-slate-800 dark:hover:bg-slate-800" onClick={() => setSelected(x)}>
+                <tr key={i} className="border-t hover:bg-hl cursor-pointer" onClick={() => setSelected(x)}>
                   <td className="px-2 py-1 font-medium">{x.com}</td>
                   <td className="px-2 py-1">{x.uniteCom}</td>
                   <td className="px-2 py-1 text-right">{x.dossiersValides ?? "—"}</td>
@@ -145,19 +146,19 @@ export default function ComsPage() {
         </table>
       </div>
       {selected && (
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
           <h2 className="font-semibold">COM : {selected.com} ({selected.uniteCom} — {selected.agence})</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-mut">
             Dossiers validés 12 mois : {selected.dossiersValides ?? "donnée indisponible"} ·
             Total retards : {selected.total}
             {selected.dossiersValides ? ` · Taux : ${(100 * selected.total / selected.dossiersValides).toFixed(1)} %` : ""}
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-sm dark:border-slate-800">
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-sm">
             <input
               value={dossierQ}
               onChange={(e) => setDossierQ(e.target.value)}
               placeholder="N° de dossier (recherche dans ses détails)…"
-              className="w-72 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="w-72 rounded-lg border border-line bg-panel px-2 py-1"
             />
             <Link
               className="rounded bg-marine-800 px-3 py-1 text-white dark:bg-gold-300 dark:text-marine-900"

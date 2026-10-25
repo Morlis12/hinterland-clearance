@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { formatDateFR } from "@/components/ui";
+import PageHeader from "@/components/PageHeader";
 
 const MAX_BYTES = 4718592;
 const MO = 1048576;
@@ -121,16 +122,16 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Import des données</h1>
+      <PageHeader eyebrow="Overdue / Administration" title="Import des données" subtitle="Dépôt des extractions Excel SPOT et historique des chargements." />
 
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
-        className={`rounded-lg border-2 border-dashed bg-white p-8 text-center ${dragOver ? "border-marine-600 bg-blue-50 dark:bg-slate-800" : "border-slate-300 dark:border-slate-700 dark:bg-slate-900"}`}
+        className={`rounded-lg border-2 border-dashed bg-panel p-8 text-center ${dragOver ? "border-marine-600 bg-hl" : "border-line "}`}
       >
         <p className="font-medium">Glissez-déposez vos fichiers ici (.xlsx, 4,5 Mo max chacun)</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-mut">
           Vous pouvez en déposer autant que nécessaire : chaque fichier est analysé puis importé à la suite.
           La date d&apos;extraction est lue automatiquement dans chaque fichier. Aucun fichier n&apos;est conservé,
           seules les lignes sont enregistrées.
@@ -141,10 +142,10 @@ export default function ImportPage() {
         />
       </div>
 
-      {msg && <div className="rounded bg-green-50 border border-green-200 p-3 text-sm text-green-800 dark:bg-green-950/40 dark:border-green-900 dark:text-green-300">{msg}</div>}
+      {msg && <div className="rounded-lg border border-ok bg-ok-bg p-3 text-sm text-ok">{msg}</div>}
 
       {queue.length > 0 && (
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold">Fichiers à traiter ({queue.length})</h2>
             <div className="flex gap-2">
@@ -154,7 +155,7 @@ export default function ImportPage() {
               >
                 Importer {readyCount > 0 ? `les ${readyCount} fichier${readyCount > 1 ? "s" : ""} prêt${readyCount > 1 ? "s" : ""}` : "tout"}
               </button>
-              <button onClick={clearQueue} disabled={busy} className="rounded border border-slate-300 px-4 py-2 text-sm disabled:opacity-40 dark:border-slate-700">
+              <button onClick={clearQueue} disabled={busy} className="rounded border border-line px-4 py-2 text-sm disabled:opacity-40">
                 Vider la liste
               </button>
             </div>
@@ -162,26 +163,26 @@ export default function ImportPage() {
 
           <div>
             {queue.map((i) => (
-              <div key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3 dark:border-slate-800">
+              <div key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
-                    {i.file.name} <span className="font-normal text-xs text-slate-400">({(i.file.size / 1024).toFixed(0)} Ko)</span>
+                    {i.file.name} <span className="font-normal text-xs text-mut">({(i.file.size / 1024).toFixed(0)} Ko)</span>
                   </p>
                   {i.preview && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-mut">
                       Extraction : <strong>{formatDateFR(i.preview.extractionDate) || "introuvable"}</strong> · {i.preview.detailCount} dossiers · {i.preview.summaryCount} COM · {i.preview.subtotalCount} sous-totaux
                       {i.preview.warnings?.length ? ` · ${i.preview.warnings.length} avertissement${i.preview.warnings.length > 1 ? "s" : ""}` : ""}
                     </p>
                   )}
                   {i.status === "done" && (
-                    <p className="text-xs text-green-700 dark:text-green-400">Import #{i.importId} : {Number(i.rowCount ?? 0).toLocaleString("fr-FR")} lignes enregistrées.</p>
+                    <p className="text-xs text-ok">Import #{i.importId} : {Number(i.rowCount ?? 0).toLocaleString("fr-FR")} lignes enregistrées.</p>
                   )}
                   {i.status === "duplicate" && (
-                    <p className="text-xs text-amber-700 dark:text-amber-300">Ce fichier a déjà été importé. Vous pouvez le conserver une seconde fois si c&apos;est volontaire.</p>
+                    <p className="text-xs text-warn">Ce fichier a déjà été importé. Vous pouvez le conserver une seconde fois si c&apos;est volontaire.</p>
                   )}
-                  {i.error && i.status !== "duplicate" && <p className="text-xs text-red-600 dark:text-red-400">{i.error}</p>}
+                  {i.error && i.status !== "duplicate" && <p className="text-xs text-bad">{i.error}</p>}
                   {!!i.preview?.warnings?.length && i.status !== "error" && (
-                    <details className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    <details className="mt-1 text-xs text-warn">
                       <summary className="cursor-pointer">Avertissements ({i.preview.warnings.length})</summary>
                       <ul className="ml-5 list-disc">{i.preview.warnings.map((w: string, k: number) => <li key={k}>{w}</li>)}</ul>
                     </details>
@@ -195,7 +196,7 @@ export default function ImportPage() {
                     </button>
                   )}
                   {i.status === "duplicate" && (
-                    <button onClick={() => importOne(i, true)} className="rounded border border-amber-600 px-3 py-1 text-xs text-amber-700 hover:bg-amber-600 hover:text-white dark:border-amber-400 dark:text-amber-300 dark:hover:bg-amber-400 dark:hover:text-marine-900">
+                    <button onClick={() => importOne(i, true)} className="rounded-lg border border-warn px-3 py-1 text-xs font-semibold text-warn hover:bg-warn hover:text-panel">
                       Importer quand même
                     </button>
                   )}
@@ -206,7 +207,7 @@ export default function ImportPage() {
                   )}
                   <button
                     onClick={() => removeItem(i.id)} disabled={i.status === "importing" || i.status === "analyzing"}
-                    className="rounded border border-slate-300 px-3 py-1 text-xs disabled:opacity-40 dark:border-slate-700"
+                    className="rounded border border-line px-3 py-1 text-xs disabled:opacity-40"
                   >
                     Retirer
                   </button>
@@ -217,20 +218,20 @@ export default function ImportPage() {
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
         <h2 className="mb-2 font-semibold">Historique des imports (snapshots)</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full text-xs">
-            <thead><tr className="text-left text-slate-500 dark:text-slate-400"><th>#</th><th>Fichier</th><th>Type</th><th>Extraction</th><th>Chargé le</th><th>Lignes</th><th>Statut</th><th>Origine</th></tr></thead>
+            <thead><tr className="text-left"><th>#</th><th>Fichier</th><th>Type</th><th>Extraction</th><th>Chargé le</th><th>Lignes</th><th>Statut</th><th>Origine</th></tr></thead>
             <tbody>
               {history.map((h: any) => (
-                <tr key={h.id} className="border-t dark:border-slate-800">
+                <tr key={h.id} className="border-t">
                   <td>{h.id}</td><td>{h.fileName}</td><td>{h.fileType}</td><td>{formatDateFR(h.extractionDate)}</td>
                   <td>{new Date(h.loadedAt).toLocaleString("fr-FR")}</td><td className="text-right">{Number(h.rowCount).toLocaleString("fr-FR")}</td>
                   <td><StatusBadge status={h.status} /></td><td>{h.origin === "demo" ? "DÉMO" : h.origin}</td>
                 </tr>
               ))}
-              {history.length === 0 && <tr><td colSpan={8} className="py-4 text-center text-slate-400 dark:text-slate-500">Aucun import pour l&apos;instant.</td></tr>}
+              {history.length === 0 && <tr><td colSpan={8} className="py-4 text-center text-mut">Aucun import pour l&apos;instant.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -241,13 +242,13 @@ export default function ImportPage() {
 
 function StatusChip({ status, importId }: { status: ItemStatus; importId?: number }) {
   const map: Record<ItemStatus, { label: string; cls: string }> = {
-    analyzing: { label: "Analyse…", cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
+    analyzing: { label: "Analyse…", cls: "bg-chip text-mut  " },
     ready: { label: "Prêt", cls: "bg-gold-100 text-marine-900 dark:bg-gold-300/15 dark:text-gold-200" },
-    importing: { label: "Import en cours…", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200" },
-    done: { label: importId ? `Importé #${importId}` : "Importé", cls: "bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300" },
-    duplicate: { label: "Déjà importé", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200" },
-    error: { label: "Erreur", cls: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300" },
-    failed: { label: "Échec", cls: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300" },
+    importing: { label: "Import en cours…", cls: "bg-warn-bg text-warn" },
+    done: { label: importId ? `Importé #${importId}` : "Importé", cls: "bg-ok-bg text-ok" },
+    duplicate: { label: "Déjà importé", cls: "bg-warn-bg text-warn" },
+    error: { label: "Erreur", cls: "bg-bad-bg text-bad" },
+    failed: { label: "Échec", cls: "bg-bad-bg text-bad" },
   };
   const m = map[status];
   return <span className={`whitespace-nowrap rounded px-2 py-0.5 text-xs ${m.cls}`}>{m.label}</span>;
@@ -255,10 +256,10 @@ function StatusChip({ status, importId }: { status: ItemStatus; importId?: numbe
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    success: "bg-green-100 text-green-800",
-    warnings: "bg-amber-100 text-amber-800",
-    failed: "bg-red-100 text-red-700",
+    success: "bg-ok-bg text-ok",
+    warnings: "bg-warn-bg text-warn",
+    failed: "bg-bad-bg text-bad",
   };
   const label: Record<string, string> = { success: "Réussi", warnings: "Avertissements", failed: "Échec" };
-  return <span className={`rounded px-2 py-0.5 ${map[status] ?? "bg-slate-100"}`}>{label[status] ?? status}</span>;
+  return <span className={`rounded px-2 py-0.5 ${map[status] ?? "bg-chip"}`}>{label[status] ?? status}</span>;
 }

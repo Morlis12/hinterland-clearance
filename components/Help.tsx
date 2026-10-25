@@ -64,13 +64,13 @@ export function HelpBubble({ id, className = "" }: { id: string; className?: str
   // placé à l'intérieur ; la fenêtre s'affichait alors en longue bande verticale dans la carte.
   const modal = open && typeof document !== "undefined" ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-marine-950/50 p-4" onClick={(e) => { e.stopPropagation(); setOpen(false); }} role="dialog" aria-modal="true" aria-label={h.t}>
-          <div className="max-h-[82vh] w-full max-w-xl overflow-y-auto rounded-xl border-t-4 border-gold-300 bg-white p-6 text-sm leading-relaxed text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-200" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 text-lg font-bold text-marine-900 dark:text-white">{h.t}</div>
+          <div className="max-h-[82vh] w-full max-w-xl overflow-y-auto rounded-xl border-t-4 border-gold-300 bg-panel p-6 text-sm leading-relaxed text-ink shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-2 text-lg font-bold text-titre">{h.t}</div>
             <Block k="C'est quoi">{h.q}</Block>
             <Block k="Comment le lire">{h.r}</Block>
             <Block k="À retenir">{h.k}</Block>
             {h.w && <Block k="Précaution" warn>{h.w}</Block>}
-            <button type="button" onClick={(e) => { e.stopPropagation(); setOpen(false); }} className="mt-4 rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">Fermer</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); setOpen(false); }} className="mt-4 rounded border border-line px-3 py-1 text-xs hover:bg-panel2">Fermer</button>
           </div>
         </div>,
         document.body
@@ -94,7 +94,7 @@ export function HelpBubble({ id, className = "" }: { id: string; className?: str
 function Block({ k, children, warn }: { k: string; children: React.ReactNode; warn?: boolean }) {
   return (
     <div className="mt-3">
-      <div className={`text-[11px] font-bold uppercase tracking-wide ${warn ? "text-amber-700 dark:text-amber-400" : "text-gold-500"}`}>{k}</div>
+      <div className={`text-[11px] font-bold uppercase tracking-wide ${warn ? "text-warn" : "text-gold-500"}`}>{k}</div>
       <p>{children}</p>
     </div>
   );

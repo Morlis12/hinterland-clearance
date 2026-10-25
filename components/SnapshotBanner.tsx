@@ -24,8 +24,8 @@ export default function SnapshotBanner({ snapshotId, previousId }: { snapshotId?
   const idx = snaps.findIndex((s) => s.id === cur.id);
   const prev = snaps.find((s) => s.id === previousId) ?? (idx >= 0 ? snaps[idx + 1] : undefined);
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-gold-300 bg-gold-100/60 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300" data-testid="snapshot-banner">
-      <span><strong className="text-marine-900 dark:text-white">Extraction du {formatDateFR(cur.extraction_date)}</strong></span>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border border-line border-l-4 border-l-acc bg-hl px-4 py-2.5 text-xs text-ink" data-testid="snapshot-banner">
+      <span><strong className="text-titre">Extraction du {formatDateFR(cur.extraction_date)}</strong></span>
       <span>Fichier « {cur.file_name} » chargé le <strong>{formatDateTimeFR(cur.loaded_at)}</strong>{cur.origin ? ` (${cur.origin === "web" ? "web" : "ligne de commande"})` : ""}</span>
       {prev ? <span>Comparé à l&apos;extraction du <strong>{formatDateFR(prev.extraction_date)}</strong> (chargée le {formatDateTimeFR(prev.loaded_at)})</span> : <span>Aucune extraction précédente à comparer</span>}
     </div>

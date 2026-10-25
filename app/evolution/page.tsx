@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { formatDateFR, formatDateTimeFR, InfoBanner, FilterBar } from "@/components/ui";
 import SnapshotBanner from "@/components/SnapshotBanner";
 import { appendFilters, emptyFilters, type Filters } from "@/src/lib/filters";
+import PageHeader from "@/components/PageHeader";
 
 const CATS: { key: string; label: string; color: string }[] = [
   { key: "total", label: "Total", color: "#6366f1" },
@@ -21,10 +22,10 @@ const CATS: { key: string; label: string; color: string }[] = [
 
 function varCls(v: number): string {
   return v > 0
-    ? "text-red-600 font-semibold dark:text-red-400"
+    ? "text-bad font-semibold"
     : v < 0
-      ? "text-green-700 font-semibold dark:text-green-400"
-      : "text-slate-500 dark:text-slate-400";
+      ? "text-ok font-semibold"
+      : "text-mut";
 }
 function arrowOf(v: number): string {
   return v > 0 ? "▲" : v < 0 ? "▼" : "▬";
@@ -109,12 +110,12 @@ export default function EvolutionPage() {
     return rows;
   }, [data, comSort]);
 
-  if (error) return <div className="rounded bg-white p-6 text-red-600 dark:bg-slate-900 dark:text-red-400">{error}</div>;
-  if (!data) return <div className="rounded bg-white p-6 dark:bg-slate-900">Chargement…</div>;
+  if (error) return <div className="rounded-2xl border border-line bg-panel p-6 text-bad">{error}</div>;
+  if (!data) return <div className="rounded-2xl border border-line bg-panel p-6">Chargement…</div>;
   if (data.single) return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Évolution</h1>
-      <div className="rounded bg-white p-6 text-slate-600 dark:bg-slate-900 dark:text-slate-400">{data.message}</div>
+      <PageHeader eyebrow="Overdue / Évolution" title="Évolution" subtitle="Comparaison des retards entre deux extractions : la précédente (N-1) et l'actuelle (N)." />
+      <div className="rounded-2xl border border-line bg-panel p-6 text-mut">{data.message}</div>
     </div>
   );
 
@@ -145,13 +146,13 @@ export default function EvolutionPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Évolution</h1>
+      <PageHeader eyebrow="Overdue / Évolution" title="Évolution" subtitle="Comparaison des retards entre deux extractions : la précédente (N-1) et l'actuelle (N)." />
       <SnapshotBanner snapshotId={Number(n) || null} previousId={Number(n1) || null} />
       <div className="flex flex-wrap gap-3 text-sm">
-        <label>Extraction précédente (N-1) : <select value={n1} onChange={(e) => { setN1(e.target.value); load(e.target.value, n); }} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        <label>Extraction précédente (N-1) : <select value={n1} onChange={(e) => { setN1(e.target.value); load(e.target.value, n); }} className="rounded-lg border border-line bg-panel px-2 py-1">
           {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{formatDateFR(s.extraction_date)} — {s.file_name}</option>)}
         </select></label>
-        <label>Extraction actuelle (N) : <select value={n} onChange={(e) => { setN(e.target.value); load(n1, e.target.value); }} className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        <label>Extraction actuelle (N) : <select value={n} onChange={(e) => { setN(e.target.value); load(n1, e.target.value); }} className="rounded-lg border border-line bg-panel px-2 py-1">
           {data.snapshots.map((s: any) => <option key={s.id} value={s.id}>{formatDateFR(s.extraction_date)} — {s.file_name}</option>)}
         </select></label>
       </div>
@@ -168,17 +169,17 @@ export default function EvolutionPage() {
         onChange={onFilter}
       />
 
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-2xl border border-line bg-panel p-4 shadow-sm">
         <div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">Total dossiers en retard (distincts)</div>
-          <div className="text-2xl font-extrabold text-marine-900 dark:text-white">
-            {totA.toLocaleString("fr-FR")} <span className="text-slate-400">→</span> {totB.toLocaleString("fr-FR")}
+          <div className="text-xs text-mut">Total dossiers en retard (distincts)</div>
+          <div className="text-2xl font-extrabold text-titre">
+            {totA.toLocaleString("fr-FR")} <span className="text-mut">→</span> {totB.toLocaleString("fr-FR")}
           </div>
         </div>
         <div className={`text-lg font-bold ${varCls(dTot)}`}>
           {arrowOf(dTot)} {diffStr(dTot)} {pctTot !== null && <span className="text-base font-semibold">({pctStr(pctTot)})</span>}
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="text-xs text-mut">
           Extraction du {formatDateFR(data.previousSnap?.extraction_date)} (N-1) au {formatDateFR(data.recentSnap?.extraction_date)} (N)
         </div>
       </div>
@@ -187,13 +188,13 @@ export default function EvolutionPage() {
         Rouge = dégradation (retards en hausse), vert = amélioration (en baisse), gris = stable.
       </InfoBanner>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm overflow-x-auto dark:bg-slate-900 dark:shadow-none">
+      <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm overflow-x-auto">
         <h2 className="mb-2 font-semibold">Par catégorie</h2>
         <table className="min-w-full text-sm">
-          <thead><tr className="text-left text-slate-500 dark:text-slate-400"><th>Catégorie</th><th>N-1</th><th>N</th><th>Variation</th><th>Variation %</th></tr></thead>
+          <thead><tr className="text-left"><th>Catégorie</th><th>N-1</th><th>N</th><th>Variation</th><th>Variation %</th></tr></thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.key} className="border-t dark:border-slate-800">
+              <tr key={r.key} className="border-t">
                 <td>{r.label}</td><td>{r.ancien.toLocaleString("fr-FR")}</td><td>{r.recent.toLocaleString("fr-FR")}</td>
                 <td className={varCls(r.variation)}>{arrowOf(r.variation)} {diffStr(r.variation)}</td>
                 <td className={varCls(r.variation)}>{pctStr(r.pct)}</td>
@@ -203,19 +204,19 @@ export default function EvolutionPage() {
         </table>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
         <h2 className="mb-2 font-semibold">Par COM</h2>
         <div className="max-h-96 overflow-auto">
           <table className="min-w-full text-sm">
-            <thead className="sticky top-0 bg-white dark:bg-slate-900">
-              <tr className="text-slate-500 dark:text-slate-400">
+            <thead className="sticky top-0">
+              <tr>
                 <Th k="com">COM</Th><Th k="ancien" right>N-1</Th><Th k="recent" right>N</Th>
                 <Th k="variation" right>Variation</Th><Th k="pct" right>Variation %</Th>
               </tr>
             </thead>
             <tbody>
               {comRows.map((r: any, i: number) => (
-                <tr key={i} className="border-t dark:border-slate-800">
+                <tr key={i} className="border-t">
                   <td>{r.com}</td>
                   <td className="text-right">{r.ancien.toLocaleString("fr-FR")}</td>
                   <td className="text-right">{r.recent.toLocaleString("fr-FR")}</td>
@@ -223,13 +224,13 @@ export default function EvolutionPage() {
                   <td className={`text-right ${varCls(r.variation)}`}>{pctStr(r.pct)}</td>
                 </tr>
               ))}
-              {comRows.length === 0 && <tr><td colSpan={5} className="py-4 text-center text-slate-400">Aucune donnée.</td></tr>}
+              {comRows.length === 0 && <tr><td colSpan={5} className="py-4 text-center text-mut">Aucune donnée.</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+      <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
         <h2 className="mb-2 font-semibold">Tendance (tous snapshots)</h2>
         <TrendChart snapshots={data.snapshots} params={trendParams} />
       </div>
@@ -274,10 +275,10 @@ function TrendChart({ snapshots, params }: { snapshots: any[]; params: string })
               key={c.key}
               onClick={() => toggle(c.key)}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                on
-                  ? "border-slate-400 bg-slate-100 font-semibold dark:border-slate-500 dark:bg-slate-800"
-                  : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"
-              }`}
+ on
+ ? "border-acc bg-hl font-semibold"
+ : "border-line text-mut "
+ }`}
             >
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color }} />
               {c.label}
@@ -287,7 +288,7 @@ function TrendChart({ snapshots, params }: { snapshots: any[]; params: string })
       </div>
       <div className="chart-trend" style={{ height: 300 }}>
         {series === null ? (
-          <div className="p-4 text-sm text-slate-500 dark:text-slate-400">Chargement…</div>
+          <div className="p-4 text-sm text-mut">Chargement…</div>
         ) : (
           <ResponsiveContainer>
             <LineChart data={series}>
@@ -301,7 +302,7 @@ function TrendChart({ snapshots, params }: { snapshots: any[]; params: string })
           </ResponsiveContainer>
         )}
       </div>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Cliquez sur une catégorie ci-dessus pour l&apos;afficher ou la masquer.</p>
+      <p className="mt-1 text-xs text-mut">Cliquez sur une catégorie ci-dessus pour l&apos;afficher ou la masquer.</p>
     </div>
   );
 }
@@ -310,11 +311,11 @@ function EvoTip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded border border-slate-200 bg-white p-2 text-xs shadow dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-lg border border-line bg-panel p-2 text-xs shadow">
       <div className="font-semibold">Extraction du {p.date}</div>
       {payload.map((x: any) => <div key={x.dataKey} style={{ color: x.stroke }}>{x.name} : {Number(x.value).toLocaleString("fr-FR")}</div>)}
-      <div className="text-slate-500">Chargé le {p.loaded}</div>
-      <div className="text-slate-500">{p.file}</div>
+      <div className="text-mut">Chargé le {p.loaded}</div>
+      <div className="text-mut">{p.file}</div>
     </div>
   );
 }
