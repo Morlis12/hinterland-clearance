@@ -121,7 +121,7 @@ gris stable, sidebar fixe repliable sur mobile.
 
 ## Interface : référentiel des applications métier AGL
 L'interface suit le référentiel issu de Juridesk (voir le skill `construction-app`, dossier `references/juridesk` du harness), appliqué à ce qui a un sens pour une application d'**analyse** :
-- **Barre d'application fine** (logo, entrées en petites capitales, thème, déconnexion) à la place de la barre latérale.
+- **Barre latérale marine conservée** (logo, pages, seuils SPOT, thème, déconnexion), repliable : pour une application d'analyse, la liste des pages reste à gauche (décision du 2026-10-26).
 - **Thème clair (fond `#F2F5F9`, cartes blanches) ou sombre (fond `#091521`, accent or)**, au choix, clair par défaut ; la préférence est retenue dans le navigateur. Les couleurs sont des **jetons** (`--bg`, `--panel`, `--line`, `--ink`, `--titre`, `--acc`, `--th`, `--ok`, `--warn`, `--bad`…) définis dans `app/globals.css` et exposés comme couleurs Tailwind (`bg-panel`, `text-titre`, `border-line`…) : ne pas écrire de couleur en dur.
 - **En-tête de page** commun (`components/PageHeader.tsx`) : eyebrow, titre, trait d'accent, sous-titre, actions.
 - **Cartes** `rounded-2xl border bg-panel`, indicateurs à bordure gauche, **tableaux** à en-tête marine (or en sombre).
