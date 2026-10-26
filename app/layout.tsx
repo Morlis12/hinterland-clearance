@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.svg" },
 };
 
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("hinterland-theme");if(t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark");}}catch(e){}})();`;
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("hinterland-theme");if(t==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AppShell>{children}</AppShell>
-        <div aria-hidden className="pointer-events-none fixed bottom-1.5 right-3 z-40 text-[11px] tracking-wide text-slate-500/80 dark:text-slate-400/80">made by KPD</div>
+        <div aria-hidden className="pointer-events-none fixed bottom-1.5 right-3 z-40 text-[11px] tracking-wide text-mut opacity-80">made by KPD</div>
       </body>
     </html>
   );

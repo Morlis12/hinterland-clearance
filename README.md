@@ -119,6 +119,15 @@ Maritime & Route locale 10 j · Maritime Hinterland 15 j. L'application ne recal
 Design : fond clair, bleu marine, rouge dégradations (hausse), vert améliorations (baisse),
 gris stable, sidebar fixe repliable sur mobile.
 
+## Interface : référentiel des applications métier AGL
+L'interface suit le référentiel issu de Juridesk (voir le skill `construction-app`, dossier `references/juridesk` du harness), appliqué à ce qui a un sens pour une application d'**analyse** :
+- **Barre d'application fine** (logo, entrées en petites capitales, thème, déconnexion) à la place de la barre latérale.
+- **Thème clair (fond `#F2F5F9`, cartes blanches) ou sombre (fond `#091521`, accent or)**, au choix, clair par défaut ; la préférence est retenue dans le navigateur. Les couleurs sont des **jetons** (`--bg`, `--panel`, `--line`, `--ink`, `--titre`, `--acc`, `--th`, `--ok`, `--warn`, `--bad`…) définis dans `app/globals.css` et exposés comme couleurs Tailwind (`bg-panel`, `text-titre`, `border-line`…) : ne pas écrire de couleur en dur.
+- **En-tête de page** commun (`components/PageHeader.tsx`) : eyebrow, titre, trait d'accent, sous-titre, actions.
+- **Cartes** `rounded-2xl border bg-panel`, indicateurs à bordure gauche, **tableaux** à en-tête marine (or en sombre).
+- Conservés tels quels : le panneau de détail des indicateurs (adapté à l'analyse), les bulles d'aide, la page de connexion, la signature « made by KPD ».
+- Non repris, car sans objet ici : comptes à double validation, référentiels, frise de parcours (accès par mot de passe partagé, pas de dossiers à faire avancer).
+
 ## Interactivité et dates (v2)
 
 - **Cartes et barres cliquables** : un clic sur une carte KPI, une barre de catégorie ou une barre de COM ouvre un panneau latéral (`components/DrillPanel.tsx`) : chiffre et variation, comment il est obtenu, évolution dans le temps (clic sur un point = bascule vers cette extraction), 10 COM les plus concernés (clic = fiche du COM), liste des dossiers, étape utile.

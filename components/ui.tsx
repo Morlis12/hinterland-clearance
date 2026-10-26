@@ -47,29 +47,29 @@ export function KpiCard({
   const diff = noPrev ? 0 : cur - (previousValue as number);
   const arrow = diff > 0 ? "▲" : diff < 0 ? "▼" : "▬";
   const cls = noPrev
-    ? "text-slate-400 dark:text-slate-500"
+    ? "text-mut "
     : diff > 0
-      ? "text-red-600 dark:text-red-400"
+      ? "text-bad"
       : diff < 0
-        ? "text-green-700 dark:text-green-400"
-        : "text-slate-500 dark:text-slate-400";
+        ? "text-ok"
+        : "text-mut";
   const diffStr = `${diff > 0 ? "+" : ""}${diff.toLocaleString("fr-FR")}`;
   const pct = !noPrev && (previousValue as number) > 0 ? (100 * diff) / (previousValue as number) : null;
   const pctStr = pct === null ? null : `${pct > 0 ? "+" : ""}${pct.toLocaleString("fr-FR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`;
 
   const inner = (
-    <div className={`flex h-full flex-col rounded-lg bg-white p-4 shadow-sm border-l-4 dark:bg-slate-900 dark:shadow-none ${accent ?? "border-marine-800 dark:border-gold-300"}`}>
+    <div className={`flex h-full flex-col rounded-2xl border border-line border-l-4 bg-panel p-4 shadow-sm ${accent ?? "border-l-acc"}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</div>
+        <div className="text-xs font-medium text-mut">{label}</div>
         {help}
       </div>
-      <div className="my-1 text-2xl font-extrabold text-marine-900 dark:text-white">{cur.toLocaleString("fr-FR")}</div>
+      <div className="my-1 text-2xl font-extrabold text-titre">{cur.toLocaleString("fr-FR")}</div>
       {spark && <Spark values={spark} />}
       <div className={`mt-auto pt-1 text-xs font-semibold ${cls}`} title="Variation vs extraction précédente">
         {noPrev ? "Pas de comparaison" : `${arrow} ${diffStr}${pctStr ? ` (${pctStr})` : ""}`}
       </div>
       {(dateLabel || onOpen) && (
-        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between gap-2 text-[10px] text-mut">
           <span>{dateLabel}</span>
           {onOpen && <span className="font-semibold text-gold-500">Voir le détail ›</span>}
         </div>
@@ -83,7 +83,7 @@ export function KpiCard({
         tabIndex={0}
         onClick={onOpen}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-        className="block h-full cursor-pointer rounded-lg transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+        className="block h-full cursor-pointer rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
       >
         {inner}
       </div>
@@ -98,11 +98,11 @@ export function SnapshotSelector({
 }: { snapshots: { id: number; extraction_date: string; loaded_at?: string; file_name: string }[]; value: number | null; onChange: (id: number) => void }) {
   return (
     <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-slate-600 dark:text-slate-400">Extraction du :</span>
+      <span className="text-mut">Extraction du :</span>
       <select
         value={value ?? ""}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="rounded-lg border border-line bg-panel px-2 py-1"
       >
         {snapshots.map((s) => (
           <option key={s.id} value={s.id}>
@@ -132,16 +132,16 @@ export function InfoBanner({
     });
   };
   return (
-    <div className="rounded-lg border border-blue-100 bg-blue-50 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-blue-100 bg-hl">
       <button
         type="button"
         onClick={toggle}
-        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs text-slate-700 dark:text-slate-400"
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs text-mut"
       >
-        <strong className="dark:text-slate-200">{title}</strong>
+        <strong className="">{title}</strong>
         <span className="shrink-0 underline">{open ? "Réduire" : "Afficher"}</span>
       </button>
-      {open && <div className="px-3 pb-3 text-xs text-slate-700 dark:text-slate-400">{children}</div>}
+      {open && <div className="px-3 pb-3 text-xs text-mut">{children}</div>}
     </div>
   );
 }
@@ -188,32 +188,32 @@ export function MultiSelect({
       className={`relative inline-flex items-center gap-2 ${className}`}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
     >
-      <span className="text-slate-600 dark:text-slate-400">{label} :</span>
+      <span className="text-mut">{label} :</span>
       <button
         type="button"
         aria-expanded={open}
         aria-haspopup="listbox"
         title={values.length ? labels.join(", ") : allLabel}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex min-w-36 max-w-56 items-center justify-between gap-2 rounded border border-slate-300 bg-white px-2 py-1 text-left dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="inline-flex min-w-36 max-w-56 items-center justify-between gap-2 rounded-lg border border-line bg-panel px-2 py-1 text-left"
       >
-        <span className={`truncate ${values.length ? "" : "text-slate-500 dark:text-slate-400"}`}>{summary}</span>
+        <span className={`truncate ${values.length ? "" : "text-mut"}`}>{summary}</span>
         <span aria-hidden className="shrink-0 text-[10px]">▾</span>
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-1 flex items-center justify-between gap-2 border-b border-slate-100 pb-1 dark:border-slate-800">
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-line bg-panel p-2 shadow-lg">
+          <div className="mb-1 flex items-center justify-between gap-2 border-b border-line pb-1">
             <button
               type="button"
               onClick={() => onChange([])}
-              className="text-xs text-slate-600 underline hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              className="text-xs text-mut underline hover:text-titre"
             >
               Tout effacer
             </button>
             <button
               type="button"
               onClick={() => onChange(options.map((o) => o.value))}
-              className="text-xs text-slate-600 underline hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              className="text-xs text-mut underline hover:text-titre"
             >
               Tout sélectionner
             </button>
@@ -222,7 +222,7 @@ export function MultiSelect({
             {options.map((o) => (
               <label
                 key={o.value}
-                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-panel2"
               >
                 <input
                   type="checkbox"
@@ -233,7 +233,7 @@ export function MultiSelect({
                 <span className="truncate">{o.label}</span>
               </label>
             ))}
-            {options.length === 0 && <div className="px-2 py-1 text-xs text-slate-500">Aucune option</div>}
+            {options.length === 0 && <div className="px-2 py-1 text-xs text-mut">Aucune option</div>}
           </div>
         </div>
       )}
@@ -254,10 +254,10 @@ export function FilterBar({
   fQ: string;
   onChange: (patch: { agence?: string[]; unite?: string[]; com?: string[]; categorie?: string[]; q?: string }) => void;
 }) {
-  const sel = "rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+  const sel = "rounded-lg border border-line bg-panel px-2 py-1   ";
   const active = fAgence.length > 0 || fUnite.length > 0 || fCom.length > 0 || fCategorie.length > 0 || Boolean(fQ);
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 text-sm shadow-sm dark:bg-slate-900 dark:shadow-none">
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-panel p-3 text-sm shadow-sm">
       <MultiSelect
         label="Agence"
         options={agences.map((a) => ({ value: a, label: a }))}
@@ -295,7 +295,7 @@ export function FilterBar({
       {active && (
         <button
           onClick={() => onChange({ agence: [], unite: [], com: [], categorie: [], q: "" })}
-          className="rounded border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          className="rounded border border-line px-3 py-1 text-xs hover:bg-panel2"
         >
           Réinitialiser
         </button>

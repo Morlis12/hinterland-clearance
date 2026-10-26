@@ -9,6 +9,7 @@ import SnapshotBanner from "@/components/SnapshotBanner";
 import DrillPanel, { type DrillTarget, type TrendRow } from "@/components/DrillPanel";
 import { HelpBubble } from "@/components/Help";
 import { appendFilters, emptyFilters, type Filters } from "@/src/lib/filters";
+import PageHeader from "@/components/PageHeader";
 
 const CATS: { key: string; label: string }[] = [
   { key: "bae", label: "BAE" },
@@ -70,8 +71,8 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.q]);
 
-  if (error) return <div className="rounded bg-white p-6 text-red-600 dark:bg-slate-900 dark:text-red-400">{error} <Link className="underline" href="/import">Aller à l&apos;import.</Link></div>;
-  if (!data) return <div className="rounded bg-white p-6 dark:bg-slate-900">Chargement…</div>;
+  if (error) return <div className="rounded-2xl border border-line bg-panel p-6 text-bad">{error} <Link className="underline" href="/import">Aller à l&apos;import.</Link></div>;
+  if (!data) return <div className="rounded-2xl border border-line bg-panel p-6">Chargement…</div>;
 
   const k = data.kpis;
   const prevKpis = data.evolution?.previous as Record<string, number> | undefined;
@@ -90,10 +91,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-marine-900 dark:text-white">Tableau de bord</h1>
-        <SnapshotSelector snapshots={data.snapshots} value={snapshot} onChange={(id) => load(filters, id)} />
-      </div>
+      <PageHeader
+        eyebrow="Overdue / Pilotage"
+        title="Tableau de bord"
+        subtitle="Dossiers en retard de l'extraction SPOT choisie, avec la variation depuis l'extraction précédente."
+        actions={<SnapshotSelector snapshots={data.snapshots} value={snapshot} onChange={(id) => load(filters, id)} />}
+      />
       <SnapshotBanner snapshotId={snapshot} />
       <FilterBar
         agences={options.agences}
@@ -112,7 +115,7 @@ export default function DashboardPage() {
         <KpiCard
           label="Total dossiers en retard (distincts)"
           value={k.totalAvecRetard ?? k.total}
-          accent="border-red-600"
+          accent="border-l-bad"
           previousValue={prevOf("totalAvecRetard", "total")}
           onOpen={() => setDrill({ kind: "total", key: "total", label: "Total des dossiers en retard" })}
           spark={sparkOf("totalAvecRetard")}
@@ -134,7 +137,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
           <h2 className="mb-2 flex items-center gap-2 font-semibold">Retards par catégorie <HelpBubble id="chart_cat" /></h2>
           <div className="chart-cat" style={{ height: 320 }}>
             <ResponsiveContainer>
@@ -146,9 +149,9 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">Cliquez sur une carte ou une barre pour ouvrir le détail. La somme des catégories ≠ dossiers distincts.</div>
+          <div className="mt-2 text-xs text-mut">Cliquez sur une carte ou une barre pour ouvrir le détail. La somme des catégories ≠ dossiers distincts.</div>
         </div>
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold">Retards par COM (top {showAll ? data.top.length : 15}) <HelpBubble id="chart_com" /></h2>
             <button onClick={() => setShowAll(!showAll)} className="text-xs text-marine-700 underline dark:text-gold-300">
@@ -180,7 +183,7 @@ export default function DashboardPage() {
         detailsQuery={detailsQuery.toString()}
       />
       {data.evolution && (
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900 dark:shadow-none">
+        <div className="rounded-2xl border border-line bg-panel p-4 shadow-sm">
           <h2 className="mb-2 flex items-center gap-2 font-semibold">Mini-évolution (2 dernières extractions) <HelpBubble id="mini_evolution" /></h2>
           <MiniEvolution previous={data.evolution.previous} recent={data.evolution.recent} />
         </div>
@@ -198,14 +201,14 @@ function MiniEvolution({ previous, recent }: { previous: any; recent: any }) {
   ];
   return (
     <table className="w-full text-sm">
-      <thead><tr className="text-left text-slate-500 dark:text-slate-400"><th>Indicateur</th><th>N-1</th><th>N</th><th>Variation</th><th>Variation %</th></tr></thead>
+      <thead><tr className="text-left"><th>Indicateur</th><th>N-1</th><th>N</th><th>Variation</th><th>Variation %</th></tr></thead>
       <tbody>
         {rows.map((x) => {
           const v = x.r - x.p;
           const pct = x.p > 0 ? (100 * v) / x.p : null;
-          const cls = v > 0 ? "text-red-600 dark:text-red-400" : v < 0 ? "text-green-700 dark:text-green-400" : "text-slate-500 dark:text-slate-400";
+          const cls = v > 0 ? "text-bad" : v < 0 ? "text-ok" : "text-mut";
           return (
-            <tr key={x.label} className="border-t dark:border-slate-800">
+            <tr key={x.label} className="border-t">
               <td>{x.label}</td><td>{x.p}</td><td>{x.r}</td>
               <td className={cls}>{v > 0 ? `+${v}` : v}</td>
               <td className={cls}>{pct === null ? "—" : `${pct.toFixed(1)} %`}</td>
@@ -224,11 +227,11 @@ function CatTip({ active, payload, total, prev, prevDate }: any) {
   const before = prev ? Number(prev[p.key] ?? 0) : undefined;
   const diff = before === undefined ? null : p.value - before;
   return (
-    <div className="rounded border border-slate-200 bg-white p-2 text-xs shadow dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-lg border border-line bg-panel p-2 text-xs shadow">
       <div className="font-semibold">{p.name}</div>
       <div>{p.value.toLocaleString("fr-FR")} dossier(s){share !== null ? ` · ${share.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du total distinct` : ""}</div>
-      {diff !== null && <div className={diff > 0 ? "text-red-600" : diff < 0 ? "text-green-700" : "text-slate-500"}>{diff > 0 ? "▲ +" : diff < 0 ? "▼ " : "▬ "}{diff.toLocaleString("fr-FR")} vs {prevDate}</div>}
-      <div className="text-slate-500">Cliquez pour le détail</div>
+      {diff !== null && <div className={diff > 0 ? "text-bad" : diff < 0 ? "text-ok" : "text-mut"}>{diff > 0 ? "▲ +" : diff < 0 ? "▼ " : "▬ "}{diff.toLocaleString("fr-FR")} vs {prevDate}</div>}
+      <div className="text-mut">Cliquez pour le détail</div>
     </div>
   );
 }

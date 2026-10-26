@@ -10,6 +10,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Jetons sémantiques du référentiel Juridesk (valeurs dans app/globals.css, clair et sombre)
+        bg: "var(--bg)",
+        panel: "var(--panel)",
+        panel2: "var(--panel2)",
+        line: "var(--line)",
+        chip: "var(--chip)",
+        hl: "var(--hl)",
+        ink: "var(--ink)",
+        mut: "var(--mut)",
+        titre: "var(--titre)",
+        acc: "var(--acc)",
+        "acc-ink": "var(--acc-ink)",
+        btn: "var(--btn)",
+        "btn-ink": "var(--btn-ink)",
+        th: "var(--th)",
+        "th-ink": "var(--th-ink)",
+        ok: "var(--ok)",
+        "ok-bg": "var(--ok-bg)",
+        warn: "var(--warn)",
+        "warn-bg": "var(--warn-bg)",
+        bad: "var(--bad)",
+        "bad-bg": "var(--bad-bg)",
         // Bleu marine de marque (logos AGL : #1C3359 / #1D3259)
         marine: {
           50: "#f2f5f9",
