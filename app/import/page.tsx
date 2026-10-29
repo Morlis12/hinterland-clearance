@@ -24,6 +24,7 @@ export default function ImportPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [msg, setMsg] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const idRef = useRef(1);
   const queueRef = useRef<QueueItem[]>([]);
   useEffect(() => { queueRef.current = queue; }, [queue]);
@@ -119,6 +120,32 @@ export default function ImportPage() {
 
   const removeItem = (id: number) => setQueue((q) => q.filter((x) => x.id !== id));
   const clearQueue = () => setQueue((q) => q.filter((x) => x.status === "analyzing" || x.status === "importing"));
+
+  const deleteImport = async (h: { id: number; fileName: string; rowCount: number }) => {
+    if (
+      !window.confirm(
+        `Supprimer définitivement l'import #${h.id} (« ${h.fileName} », ${Number(h.rowCount).toLocaleString("fr-FR")} ligne(s)) ?\n\nCette action retire aussitôt ces lignes de la base — elle est irréversible.`
+      )
+    ) {
+      return;
+    }
+    setMsg("");
+    setDeletingId(h.id);
+    try {
+      const r = await fetch(`/api/imports/${h.id}`, { method: "DELETE" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setMsg(j.error ?? "Échec de la suppression.");
+        return;
+      }
+      await loadHistory();
+      setMsg(`Import #${h.id} (« ${h.fileName} ») supprimé.`);
+    } catch {
+      setMsg("Erreur réseau pendant la suppression.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -222,16 +249,25 @@ export default function ImportPage() {
         <h2 className="mb-2 font-semibold">Historique des imports (snapshots)</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full text-xs">
-            <thead><tr className="text-left"><th>#</th><th>Fichier</th><th>Type</th><th>Extraction</th><th>Chargé le</th><th>Lignes</th><th>Statut</th><th>Origine</th></tr></thead>
+            <thead><tr className="text-left"><th>#</th><th>Fichier</th><th>Type</th><th>Extraction</th><th>Chargé le</th><th>Lignes</th><th>Statut</th><th>Origine</th><th></th></tr></thead>
             <tbody>
               {history.map((h: any) => (
                 <tr key={h.id} className="border-t">
                   <td>{h.id}</td><td>{h.fileName}</td><td>{h.fileType}</td><td>{formatDateFR(h.extractionDate)}</td>
                   <td>{new Date(h.loadedAt).toLocaleString("fr-FR")}</td><td className="text-right">{Number(h.rowCount).toLocaleString("fr-FR")}</td>
                   <td><StatusBadge status={h.status} /></td><td>{h.origin === "demo" ? "DÉMO" : h.origin}</td>
+                  <td>
+                    <button
+                      onClick={() => deleteImport(h)}
+                      disabled={deletingId === h.id}
+                      className="rounded border border-bad px-2 py-0.5 text-xs text-bad hover:bg-bad hover:text-panel disabled:opacity-40"
+                    >
+                      {deletingId === h.id ? "Suppression…" : "Supprimer"}
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {history.length === 0 && <tr><td colSpan={8} className="py-4 text-center text-mut">Aucun import pour l&apos;instant.</td></tr>}
+              {history.length === 0 && <tr><td colSpan={9} className="py-4 text-center text-mut">Aucun import pour l&apos;instant.</td></tr>}
             </tbody>
           </table>
         </div>
