@@ -24,7 +24,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar open={open} onToggle={toggle} />
-      <main className={`flex-1 min-w-0 transition-[margin] duration-200 ${bare ? "" : open ? "lg:ml-64" : "lg:ml-0"}`}>
+      <main className={`flex-1 min-w-0 transition-[margin] duration-300 ease-in-out ${bare ? "" : open ? "lg:ml-52" : "lg:ml-0"}`}>
         <div className={bare ? "" : `mx-auto max-w-7xl p-4 pt-16 md:p-6 md:pt-16 ${open ? "lg:pt-6" : "lg:pt-16"}`}>{children}</div>
       </main>
     </div>

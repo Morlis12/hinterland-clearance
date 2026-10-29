@@ -16,7 +16,11 @@ export const CATEGORIES = [
   { key: "retourConteneur", fr: "retour conteneur en retard", bit: 4, label: "Retour conteneur" },
   { key: "declaresNonFactures", fr: "dossiers declares non factures", bit: 5, label: "Déclarés non facturés" },
   { key: "factPrestation", fr: "facturation prestation en retard", bit: 6, label: "Facturation prestation" },
-  { key: "archivage", fr: "archivage en retard", bit: 7, label: "Archivage" },
+  // Changement côté source (2026-10-29) : la colonne s'appelait « Archivage en Retard »,
+  // elle s'appelle maintenant « Dossiers non Archivés » (Sheet1 et Sheet2 du Fichier A).
+  // normalizeHeader() gère déjà les espaces multiples / la casse / les accents : aucune
+  // autre adaptation n'est nécessaire pour que la correspondance reste valide.
+  { key: "archivage", fr: "dossiers non archives", bit: 7, label: "Archivage" },
   { key: "sansDeclaration", fr: "dossiers sans declaration", bit: 8, label: "Sans déclaration" },
   { key: "debours", fr: "dossiers avec debours", bit: 9, label: "Avec débours" },
 ] as const;

@@ -160,6 +160,41 @@ export async function cleanupImportRows(pool: Pool, importId: number) {
   await pool.query(`DELETE FROM raw_com_summary WHERE import_id=$1`, [importId]);
 }
 
+/**
+ * Supprime un import chargé par erreur : ses lignes brutes (raw_dossier_details,
+ * raw_unarchived, raw_com_summary) puis la ligne `imports` elle-même, dans une seule
+ * transaction (les clés étrangères ne sont pas en cascade : un échec ne doit rien
+ * laisser à moitié supprimé). Les référentiels partagés (agencies, com_units, coms)
+ * ne sont jamais touchés : d'autres imports peuvent encore s'y référer.
+ * Retourne la ligne supprimée (pour le message de confirmation), ou null si l'import
+ * n'existait déjà plus.
+ */
+export async function deleteImport(pool: Pool, importId: number) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT id, file_name AS "fileName", row_count AS "rowCount" FROM imports WHERE id=$1`,
+      [importId]
+    );
+    if (existing.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    await client.query(`DELETE FROM raw_dossier_details WHERE import_id=$1`, [importId]);
+    await client.query(`DELETE FROM raw_unarchived WHERE import_id=$1`, [importId]);
+    await client.query(`DELETE FROM raw_com_summary WHERE import_id=$1`, [importId]);
+    await client.query(`DELETE FROM imports WHERE id=$1`, [importId]);
+    await client.query("COMMIT");
+    return existing.rows[0] as { id: number; fileName: string; rowCount: number };
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 export function logStep(msg: string, fields?: Record<string, unknown>) {
   logger.info(msg, fields);
 }
