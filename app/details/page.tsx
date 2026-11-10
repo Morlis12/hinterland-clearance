@@ -17,6 +17,7 @@ const CATS = [
   { key: "archivage", label: "Archivage" },
   { key: "sansDeclaration", label: "Sans déclaration" },
   { key: "debours", label: "Avec débours" },
+  { key: "dossiersEnVie", label: "Dossiers en vie" },
 ];
 
 function DetailsInner() {
@@ -71,7 +72,7 @@ function DetailsInner() {
           <div className="overflow-x-auto rounded-2xl border border-line bg-panel shadow-sm">
             <table className="min-w-full text-xs">
               <thead><tr className="bg-th text-th-ink">
-                {["Extraction", "Chargé le", "Dossier", "Agence", "Unité", "COM", "BAE", "Douane", "Mise livr.", "Livraison", "Retour", "Décl.n.fact", "Fact.prest.", "Archiv.", "Sans décl.", "Débours"].map((h) => <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>)}
+                {["Extraction", "Chargé le", "Dossier", "Agence", "Unité", "COM", "BAE", "Douane", "Mise livr.", "Livraison", "Retour", "Décl.n.fact", "Fact.prest.", "Archiv.", "Sans décl.", "Débours", "En vie"].map((h) => <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>)}
               </tr></thead>
               <tbody>
                 {data.rows.map((r: any, i: number) => (
@@ -82,7 +83,7 @@ function DetailsInner() {
                     <td className="px-2 py-1">{r.agence}</td>
                     <td className="px-2 py-1">{r.unite}</td>
                     <td className="px-2 py-1">{r.com}</td>
-                    {[r.bae, r.factDouane, r.miseEnLivraison, r.livraison, r.retourConteneur, r.declaresNonFactures, r.factPrestation, r.archivage, r.sansDeclaration, r.debours].map((v: number, k: number) => (
+                    {[r.bae, r.factDouane, r.miseEnLivraison, r.livraison, r.retourConteneur, r.declaresNonFactures, r.factPrestation, r.archivage, r.sansDeclaration, r.debours, r.dossiersEnVie].map((v: number, k: number) => (
                       <td key={k} className={`px-2 py-1 text-center ${v ? "bg-bad-bg font-bold text-bad" : "text-mut "}`}>{v ? "1" : "·"}</td>
                     ))}
                   </tr>

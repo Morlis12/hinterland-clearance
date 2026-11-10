@@ -17,12 +17,18 @@ export const CATEGORIES = [
   { key: "declaresNonFactures", fr: "dossiers declares non factures", bit: 5, label: "Déclarés non facturés" },
   { key: "factPrestation", fr: "facturation prestation en retard", bit: 6, label: "Facturation prestation" },
   // Changement côté source (2026-10-29) : la colonne s'appelait « Archivage en Retard »,
-  // elle s'appelle maintenant « Dossiers non Archivés » (Sheet1 et Sheet2 du Fichier A).
-  // normalizeHeader() gère déjà les espaces multiples / la casse / les accents : aucune
-  // autre adaptation n'est nécessaire pour que la correspondance reste valide.
-  { key: "archivage", fr: "dossiers non archives", bit: 7, label: "Archivage" },
-  { key: "sansDeclaration", fr: "dossiers sans declaration", bit: 8, label: "Sans déclaration" },
+  // elle s'appelait ensuite « Dossiers non Archivés » (Sheet1 et Sheet2 du Fichier A),
+  // puis (2026-11-10) « Livrés Facturés non archivés ». normalizeHeader() gère déjà les
+  // espaces multiples / la casse / les accents : aucune autre adaptation n'est nécessaire
+  // pour que la correspondance reste valide -- seul le texte `fr` doit suivre le libellé réel.
+  { key: "archivage", fr: "livres factures non archives", bit: 7, label: "Archivage" },
+  // Changement côté source (2026-11-10) : la colonne s'appelait « Dossiers sans
+  // Déclaration », elle s'appelle maintenant « Livrés Facturés sans Déclaration ».
+  { key: "sansDeclaration", fr: "livres factures sans declaration", bit: 8, label: "Sans déclaration" },
   { key: "debours", fr: "dossiers avec debours", bit: 9, label: "Avec débours" },
+  // Nouvelle catégorie (2026-11-10, fichier source) : « Dossiers en vie » (EN « Files
+  // Ongoing »), absente du fichier précédent -- pas un renommage, un vrai 11e indicateur.
+  { key: "dossiersEnVie", fr: "dossiers en vie", bit: 10, label: "Dossiers en vie" },
 ] as const;
 
 export type CategoryKey = (typeof CATEGORIES)[number]["key"];

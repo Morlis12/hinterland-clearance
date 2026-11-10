@@ -97,7 +97,7 @@ export async function batchInsertDetails(
     let p = 1;
     chunk.forEach((r) => {
       values.push(
-        `($${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++})`
+        `($${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++})`
       );
       params.push(
         importId, r.agencyId, r.unitId, r.comId,
@@ -105,11 +105,11 @@ export async function batchInsertDetails(
         r.flags.bae ?? 0, r.flags.factDouane ?? 0, r.flags.miseEnLivraison ?? 0,
         r.flags.livraison ?? 0, r.flags.retourConteneur ?? 0, r.flags.declaresNonFactures ?? 0,
         r.flags.factPrestation ?? 0, r.flags.archivage ?? 0, r.flags.sansDeclaration ?? 0,
-        r.flags.debours ?? 0, r.mask ?? 0
+        r.flags.debours ?? 0, r.flags.dossiersEnVie ?? 0, r.mask ?? 0
       );
     });
-    const sql = `INSERT INTO ${table}(import_id, agency_id, com_unit_id, com_id, agency_name, com_unit_name, com_name, dossier, bae, fact_douane, mise_en_livraison, livraison, retour_conteneur, declares_non_factures, fact_prestation, archivage, sans_declaration, debours, flags_mask) VALUES ${values.join(",")}`;
-    // vérification : 19 colonnes
+    const sql = `INSERT INTO ${table}(import_id, agency_id, com_unit_id, com_id, agency_name, com_unit_name, com_name, dossier, bae, fact_douane, mise_en_livraison, livraison, retour_conteneur, declares_non_factures, fact_prestation, archivage, sans_declaration, debours, dossiers_en_vie, flags_mask) VALUES ${values.join(",")}`;
+    // vérification : 20 colonnes
     await pool.query(sql, params);
   }
 }
@@ -129,7 +129,7 @@ export async function batchInsertSummary(
   let p = 1;
   rows.forEach((r) => {
     values.push(
-      `($${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++})`
+      `($${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++},$${p++})`
     );
     params.push(
       importId, r.agencyId, r.unitId, r.comId,
@@ -138,11 +138,11 @@ export async function batchInsertSummary(
       r.flags.bae ?? 0, r.flags.factDouane ?? 0, r.flags.miseEnLivraison ?? 0,
       r.flags.livraison ?? 0, r.flags.retourConteneur ?? 0, r.flags.declaresNonFactures ?? 0,
       r.flags.factPrestation ?? 0, r.flags.archivage ?? 0, r.flags.sansDeclaration ?? 0,
-      r.flags.debours ?? 0
+      r.flags.debours ?? 0, r.flags.dossiersEnVie ?? 0
     );
   });
-  // 18 colonnes listées ci-dessus (import_id ... debours)
-  const sql = `INSERT INTO raw_com_summary(import_id, agency_id, com_unit_id, com_id, agency_name, com_unit_name, com_name, is_subtotal, dossiers_valides, bae, fact_douane, mise_en_livraison, livraison, retour_conteneur, declares_non_factures, fact_prestation, archivage, sans_declaration, debours) VALUES ${values.join(",")}`;
+  // 19 colonnes listées ci-dessus (import_id ... dossiers_en_vie)
+  const sql = `INSERT INTO raw_com_summary(import_id, agency_id, com_unit_id, com_id, agency_name, com_unit_name, com_name, is_subtotal, dossiers_valides, bae, fact_douane, mise_en_livraison, livraison, retour_conteneur, declares_non_factures, fact_prestation, archivage, sans_declaration, debours, dossiers_en_vie) VALUES ${values.join(",")}`;
   await pool.query(sql, params);
 }
 

@@ -18,6 +18,7 @@ const CATS: { key: string; label: string; color: string }[] = [
   { key: "archivage", label: "Archivage", color: "#8b5cf6" },
   { key: "sansDeclaration", label: "Sans décl.", color: "#ec4899" },
   { key: "debours", label: "Débours", color: "#14b8a6" },
+  { key: "dossiersEnVie", label: "En vie", color: "#f43f5e" },
 ];
 
 function varCls(v: number): string {
