@@ -92,6 +92,7 @@ export const rawComSummary = pgTable(
     archivage: integer("archivage").notNull().default(0),
     sansDeclaration: integer("sans_declaration").notNull().default(0),
     debours: integer("debours").notNull().default(0),
+    dossiersEnVie: integer("dossiers_en_vie").notNull().default(0),
   },
   (t) => [
     index("raw_com_summary_import_idx").on(t.importId),
@@ -125,6 +126,7 @@ export const rawDossierDetails = pgTable(
     archivage: smallint("archivage").notNull().default(0),
     sansDeclaration: smallint("sans_declaration").notNull().default(0),
     debours: smallint("debours").notNull().default(0),
+    dossiersEnVie: smallint("dossiers_en_vie").notNull().default(0),
     flagsMask: integer("flags_mask").notNull().default(0),
   },
   (t) => [
@@ -160,6 +162,7 @@ export const rawUnarchived = pgTable(
     archivage: smallint("archivage").notNull().default(0),
     sansDeclaration: smallint("sans_declaration").notNull().default(0),
     debours: smallint("debours").notNull().default(0),
+    dossiersEnVie: smallint("dossiers_en_vie").notNull().default(0),
     flagsMask: integer("flags_mask").notNull().default(0),
   },
   (t) => [

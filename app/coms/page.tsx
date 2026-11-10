@@ -19,6 +19,7 @@ const COLS: { key: string; label: string }[] = [
   { key: "archivage", label: "Archivage" },
   { key: "sansDeclaration", label: "Sans décl." },
   { key: "debours", label: "Débours" },
+  { key: "dossiersEnVie", label: "En vie" },
   { key: "total", label: "Total retards" },
 ];
 
@@ -132,6 +133,7 @@ export default function ComsPage() {
                   <td className="px-2 py-1 text-right">{x.archivage}</td>
                   <td className="px-2 py-1 text-right">{x.sansDeclaration}</td>
                   <td className="px-2 py-1 text-right">{x.debours}</td>
+                  <td className="px-2 py-1 text-right">{x.dossiersEnVie}</td>
                   <td
                     className="px-2 py-1 text-right font-bold"
                     style={{ backgroundColor: heat(t) }}

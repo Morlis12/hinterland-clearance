@@ -111,10 +111,17 @@ export async function parseFileA(buffer: Buffer, fileName: string): Promise<Pars
   const g1 = sheetToGrid(s1);
   const g2 = sheetToGrid(s2);
 
+  // Largeur de scan Sheet1 : le fichier source a gagné des colonnes fusionnées vides
+  // supplémentaires entre ses en-têtes au fil des mises à jour (ex. 2026-11-10 : "Dossiers
+  // avec Débours" est passé de la colonne 26 à la colonne 32) -- une limite fixe trop
+  // étroite fait échouer la détection par texte sans avertissement clair, donc on scanne
+  // large (colonne 50) plutôt que de resserrer à la largeur observée aujourd'hui.
+  const SHEET1_SCAN_WIDTH = 50;
+
   // ---------- Sheet1 : date d'extraction (haut de feuille, lignes 1-5) ----------
   let extractionDate = "";
   outer: for (let r = 1; r <= 5; r++) {
-    for (let c = 1; c <= 30; c++) {
+    for (let c = 1; c <= SHEET1_SCAN_WIDTH; c++) {
       const iso = excelDateToISO(gridCell(g1, r, c));
       if (iso) { extractionDate = iso; break outer; }
     }
@@ -125,7 +132,7 @@ export async function parseFileA(buffer: Buffer, fileName: string): Promise<Pars
 
   // ---------- Sheet1 : en-têtes FR ligne 6, repérage par texte ----------
   const headerRow6: unknown[] = [];
-  for (let c = 1; c <= 30; c++) headerRow6.push(gridCell(g1, 6, c));
+  for (let c = 1; c <= SHEET1_SCAN_WIDTH; c++) headerRow6.push(gridCell(g1, 6, c));
   const norm6 = headerRow6.map(normalizeHeader);
   const colOf = (needle: string): number => {
     const i = norm6.findIndex((h) => h === needle || h.startsWith(needle));

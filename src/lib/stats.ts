@@ -12,6 +12,7 @@ export const CAT_COLUMNS: Record<string, string> = {
   archivage: "archivage",
   sansDeclaration: "sans_declaration",
   debours: "debours",
+  dossiersEnVie: "dossiers_en_vie",
 };
 
 export interface AggFilters {
@@ -103,7 +104,8 @@ export async function topComs(pool: Pool, importId: number, limit = 15, f: AggFi
       COALESCE(SUM(retour_conteneur),0)::int AS "retourConteneur",
       COALESCE(SUM(declares_non_factures),0)::int AS "declaresNonFactures",
       COALESCE(SUM(fact_prestation),0)::int AS "factPrestation", COALESCE(SUM(archivage),0)::int AS archivage,
-      COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours
+      COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours,
+      COALESCE(SUM(dossiers_en_vie),0)::int AS "dossiersEnVie"
      FROM raw_dossier_details WHERE import_id=$1${w.all}
      GROUP BY com_name, com_unit_name, agency_name ORDER BY total DESC LIMIT $${w.next}`,
     [importId, ...w.params, limit]
@@ -126,7 +128,8 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
         COALESCE(SUM(retour_conteneur),0)::int AS "retourConteneur",
         COALESCE(SUM(declares_non_factures),0)::int AS "declaresNonFactures",
         COALESCE(SUM(fact_prestation),0)::int AS "factPrestation", COALESCE(SUM(archivage),0)::int AS archivage,
-        COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours
+        COALESCE(SUM(sans_declaration),0)::int AS "sansDeclaration", COALESCE(SUM(debours),0)::int AS debours,
+        COALESCE(SUM(dossiers_en_vie),0)::int AS "dossiersEnVie"
        FROM raw_dossier_details WHERE import_id=$1${w.all} GROUP BY 1,2,3
      )
      SELECT COALESCE(ret.com_name, val.com_name) AS com,
@@ -138,7 +141,8 @@ export async function comMatrix(pool: Pool, importId: number, f: AggFilters = {}
        COALESCE(ret.livraison,0) AS livraison, COALESCE(ret."retourConteneur",0) AS "retourConteneur",
        COALESCE(ret."declaresNonFactures",0) AS "declaresNonFactures",
        COALESCE(ret."factPrestation",0) AS "factPrestation", COALESCE(ret.archivage,0) AS archivage,
-       COALESCE(ret."sansDeclaration",0) AS "sansDeclaration", COALESCE(ret.debours,0) AS debours
+       COALESCE(ret."sansDeclaration",0) AS "sansDeclaration", COALESCE(ret.debours,0) AS debours,
+       COALESCE(ret."dossiersEnVie",0) AS "dossiersEnVie"
      FROM ret FULL OUTER JOIN val
        ON COALESCE(ret.com_name,'') = COALESCE(val.com_name,'')
       AND COALESCE(ret.com_unit_name,'') = COALESCE(val.com_unit_name,'')
@@ -190,7 +194,8 @@ export async function queryDossiers(pool: Pool, importId: number, f: DossierFilt
     `SELECT dossier, agency_name AS agence, com_unit_name AS unite, com_name AS com,
       bae, fact_douane AS "factDouane", mise_en_livraison AS "miseEnLivraison", livraison,
       retour_conteneur AS "retourConteneur", declares_non_factures AS "declaresNonFactures",
-      fact_prestation AS "factPrestation", archivage, sans_declaration AS "sansDeclaration", debours
+      fact_prestation AS "factPrestation", archivage, sans_declaration AS "sansDeclaration", debours,
+      dossiers_en_vie AS "dossiersEnVie"
      FROM raw_dossier_details WHERE ${where.join(" AND ")} ORDER BY ${sortCol} ${dir} LIMIT $${p} OFFSET $${p + 1}`,
     [...params, pageSize, (page - 1) * pageSize]
   );
@@ -225,7 +230,7 @@ export async function trendsAll(pool: Pool, f: AggFilters = {}) {
     `SELECT i.id, i.file_name, i.extraction_date, i.loaded_at, i.origin,
        COUNT(d.*)::int AS total, COUNT(d.*) FILTER (WHERE d.flags_mask <> 0)::int AS "totalAvecRetard", ${catSums}
      FROM imports i
-     LEFT JOIN raw_dossier_details d ON d.import_id = i.id${w.all.replace(/agency_name|com_unit_name|com_name|dossier|bae|fact_douane|mise_en_livraison|livraison|retour_conteneur|declares_non_factures|fact_prestation|archivage|sans_declaration|debours/g, (m) => `d.${m}`)}
+     LEFT JOIN raw_dossier_details d ON d.import_id = i.id${w.all.replace(/agency_name|com_unit_name|com_name|dossier|bae|fact_douane|mise_en_livraison|livraison|retour_conteneur|declares_non_factures|fact_prestation|archivage|sans_declaration|debours|dossiers_en_vie/g, (m) => `d.${m}`)}
      WHERE i.file_type='A' AND i.status IN ('success','warnings')
      GROUP BY i.id ORDER BY i.extraction_date ASC, i.id ASC`,
     w.params

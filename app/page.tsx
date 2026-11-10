@@ -22,6 +22,7 @@ const CATS: { key: string; label: string }[] = [
   { key: "archivage", label: "Archivage" },
   { key: "sansDeclaration", label: "Sans déclaration" },
   { key: "debours", label: "Avec débours" },
+  { key: "dossiersEnVie", label: "Dossiers en vie" },
 ];
 
 export default function DashboardPage() {
@@ -122,7 +123,7 @@ export default function DashboardPage() {
           help={<HelpBubble id="total" />}
           dateLabel={dateLabel}
         />
-        {CATS.slice(0, 9).map((c) => (
+        {CATS.map((c) => (
           <KpiCard
             key={c.key}
             label={c.label}

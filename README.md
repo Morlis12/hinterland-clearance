@@ -73,6 +73,22 @@ Détection du type **par noms de feuilles + en-têtes**, pas par nom de fichier.
 Les fichiers ne sont **pas conservés** : seules les lignes vont en base (+ nom et SHA-256
 dans l'historique pour détecter les doublons).
 
+**Historique des changements de structure côté source** — chaque colonne est repérée par son
+texte d'en-tête exact (`src/lib/import/constants.ts`), jamais par position : un renommage côté
+SPOT casse donc l'import tant que le texte de référence n'est pas mis à jour ici.
+- 2026-10-29 : « Archivage en Retard » → « Dossiers non Archivés ».
+- 2026-11-10 : « Dossiers non Archivés » → « Livrés Facturés non archivés » ; « Dossiers sans
+  Déclaration » → « Livrés Facturés sans Déclaration » ; nouvelle 11e catégorie **« Dossiers en
+  vie »** (EN « Files Ongoing », pas un renommage) ; la largeur de lecture de Sheet1 est passée
+  de 30 à 50 colonnes (le fichier a gagné des colonnes fusionnées vides qui décalaient « Dossiers
+  avec Débours » hors de l'ancienne limite). **Un fichier au format antérieur au 2026-11-10 ne
+  peut plus être importé** (en-têtes introuvables) -- c'est le compromis assumé de la détection
+  par texte, pas une régression : il n'y a jamais eu de double-format supporté en parallèle.
+  En ajoutant cette 11e catégorie, un bug préexistant a été trouvé et corrigé : le tableau de
+  bord (`app/page.tsx`) limitait ses cartes KPI à `CATS.slice(0, 9)`, ce qui masquait déjà
+  silencieusement « Avec débours » (10e catégorie) avant même l'ajout de « Dossiers en vie » --
+  corrigé en affichant toutes les catégories (`CATS.map(...)`), sans limite codée en dur.
+
 ## Imports
 
 ```bash
@@ -105,7 +121,7 @@ Maritime & Route locale 10 j · Maritime Hinterland 15 j. L'application ne recal
 
 | Page | Contenu |
 |---|---|
-| `/` Tableau de bord | Sélecteur de snapshot (défaut : plus récent, dates jj/mm/aaaa), 10 cartes KPI cliquables (titre en haut, chiffre au centre, en bas variation vs N-1 : ▲/▼/▬ + écart signé + %, rouge hausse / vert baisse / gris stable, « Pas de comparaison » sans N-1, % omis si N-1 = 0), retards par catégorie, top 15 COM (voir tout), mini-évolution N-1/N. |
+| `/` Tableau de bord | Sélecteur de snapshot (défaut : plus récent, dates jj/mm/aaaa), 1 carte total + 1 carte par catégorie (12 cartes KPI cliquables -- toujours `CATEGORIES.length + 1`, jamais une liste tronquée, voir 2026-11-10) (titre en haut, chiffre au centre, en bas variation vs N-1 : ▲/▼/▬ + écart signé + %, rouge hausse / vert baisse / gris stable, « Pas de comparaison » sans N-1, % omis si N-1 = 0), retards par catégorie, top 15 COM (voir tout), mini-évolution N-1/N. |
 | `/coms` | Matrice COM × catégories (+ validés 12 mois), tri, filtres agence/unité, panneau détaillé + lien vers ses dossiers. |
 | `/details` | Recherche dossier/COM, filtres (agence, unité, COM, catégorie via URL), tri, pagination **serveur**, export CSV limité (`EXPORT_MAX_ROWS`, message si dépassé). |
 | `/evolution` | Deux sélecteurs (N et N-1, préremplis sur les deux plus récentes), bandeau de synthèse (total N-1 → N, variation et %), tableau par catégorie, tableau par COM triable (défaut : plus forte dégradation), tendance sur tous les snapshots avec une courbe par catégorie (sélectionnables) ; rouge = dégradation, vert = amélioration, gris = stable ; message clair si un seul snapshot. |
@@ -146,7 +162,7 @@ L'interface suit le référentiel issu de Juridesk (voir le skill `construction-
 3. **Calculées** : agrégats recalculés à la demande depuis 1+2 (`src/lib/stats.ts`, aucune
    table d'agrégats persistée).
 
-Optimisations volume : textes normalisés (pas répétés par ligne), 10 catégories en
+Optimisations volume : textes normalisés (pas répétés par ligne), 11 catégories en
 `smallint` + `flags_mask` (bits), index sur `import_id`, `com_id`, `agency_id`, `dossier`.
 
 **Taille estimée** (mesurée) : ~20 566 dossiers Fichier A ≈ 3,9 Mo de table (~200 octets/ligne).
@@ -229,3 +245,35 @@ Explication **ligne à ligne, sans masquage** :
 
 Vérification directe en base : `SUM()` sur `raw_dossier_details` (chaque catégorie est un
 `smallint` 0/1) — les chiffres ci-dessus sont reproductibles dossier par dossier.
+
+## Validation après recalibrage du 2026-11-10 (nouvelle structure Fichier A)
+
+Import du fichier reçu le 2026-11-10 (nouveaux en-têtes, 11e catégorie). Snapshot daté
+**09/11/2026** (date lue dans le fichier). **19 003 dossiers**, statut `warnings` : 5 doublons
+de dossier conservés, 3 lignes « Non affecté », 1 ligne de total exclue. Les 2 nouveaux noms de
+COM apparus dans les données (Touré Amed, Yéo Kévin) ont été ajoutés automatiquement au
+référentiel `coms` par le mécanisme d'import existant (`ensureCom`, aucun changement de code
+nécessaire pour ça).
+
+### Réconciliation avec la ligne de total de Sheet2
+
+| Catégorie | Ligne de total (somme) | Comptage application (dossiers distincts) | Écart | Explication |
+|---|---:|---:|---:|---|
+| BAE | 226 | 226 | 0 | — |
+| Facturation Douane | 48 | 48 | 0 | — |
+| Mise en livraison | 76 | 76 | 0 | — |
+| Livraison | 148 | 147 | −1 | 1 ligne à la valeur `2` (dossier 26222678, déjà vu en 2026-11-06) |
+| Retour conteneur | 99 | 99 | 0 | — |
+| Déclarés non facturés | 841 | 841 | 0 | — |
+| Facturation prestation | 2 102 | 2 102 | 0 | — |
+| Livrés Facturés non archivés | 3 843 | 3 507 | −336 | 124 lignes à une valeur >1 (jusqu'à 18) — un vrai compteur d'événements sur cette colonne, pas un simple 0/1 ; `flagToInt` compte quand même 1 dossier/ligne, conforme à la convention « dossiers distincts, jamais la somme des catégories » |
+| **Dossiers en vie** | **9 887** | **9 887** | **0** | nouvelle catégorie, aucune ligne à valeur >1 |
+| Livrés Facturés sans Déclaration | 35 | 34 | −1 | 1 ligne à la valeur `2` (dossier 26214901) |
+| Avec débours | 11 156 | 11 153 | −3 | 3 lignes à la valeur `2` (dossiers 25202931/935/938, déjà vus en 2026-11-06) |
+
+Chaque écart a été vérifié ligne à ligne dans le fichier source (jamais supposé) : tous
+s'expliquent par une valeur de cellule strictement supérieure à 1, le même phénomène déjà
+documenté le 2026-11-06, sur les mêmes dossiers récurrents pour Livraison/Débours. Aucun bug.
+
+Vérifié aussi : toutes les pages (`/`, `/coms`, `/details`, `/evolution`), l'export CSV et le
+filtre par catégorie affichent correctement la 11e catégorie, sans erreur console.
